@@ -72,6 +72,7 @@
     <Compile Include="ServiceBusQueueSqlServerStorageExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="HangFire.Azure.ServiceBusQueue.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
