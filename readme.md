@@ -7,6 +7,8 @@ This library adds support for Service Bus Queues to be used together
 with HangFire.SqlServer job storage implementation. All job data is saved
 to SQL Azure database, but job queues use Service Bus Queue.
 
+**Note:** This is pre-alpha version, that has not been ever tested. Please, use it with care :)
+
 Installation
 -------------
 
