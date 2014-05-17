@@ -1,7 +1,7 @@
 HangFire.Azure.ServiceBusQueue
 ============================
 
-<a href="https://ci.appveyor.com/project/odinserj/hangfire-azure-servicebusqueue"><img title="Build status" width="113" src="https://ci.appveyor.com/api/projects/status/kog7v4hd4a5o5s8d?retina=true" /></a>
+<a href="https://ci.appveyor.com/project/odinserj/hangfire-azure-servicebusqueue"><img title="Build status" width="113" src="https://ci.appveyor.com/api/projects/status/7so5rr4a2qy5abw6?retina=true" /></a>
 
 This library adds support for Service Bus Queues to be used together
 with HangFire.SqlServer job storage implementation. All job data is saved
