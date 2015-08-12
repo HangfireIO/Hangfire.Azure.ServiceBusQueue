@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
-using HangFire.SqlServer;
-using HangFire.Storage;
+using System.Transactions;
+using Hangfire.SqlServer;
+using Hangfire.Storage;
 using Microsoft.ServiceBus.Messaging;
 
-namespace HangFire.Azure.ServiceBusQueue
+namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueJobQueue : IPersistentJobQueue
     {
         private static readonly TimeSpan SyncReceiveTimeout = TimeSpan.FromSeconds(5);
-        private readonly string _connectionString;
 
-        public ServiceBusQueueJobQueue(string connectionString)
+        private readonly ServiceBusManager _manager;
+
+        public ServiceBusQueueJobQueue(ServiceBusManager manager)
         {
-            _connectionString = connectionString;
+            if (manager == null) throw new ArgumentNullException("manager");
+
+            _manager = manager;
         }
 
         public IFetchedJob Dequeue(string[] queues, CancellationToken cancellationToken)
@@ -23,7 +27,7 @@ namespace HangFire.Azure.ServiceBusQueue
             var queueIndex = 0;
 
             var clients = queues
-                .Select(queue => QueueClient.CreateFromConnectionString(_connectionString, queue))
+                .Select(queue => _manager.GetClient(queue))
                 .ToArray();
 
             do
@@ -50,12 +54,18 @@ namespace HangFire.Azure.ServiceBusQueue
 
         public void Enqueue(string queue, string jobId)
         {
-            var client = QueueClient.CreateFromConnectionString(_connectionString, queue);
-
-            using (var message = new BrokeredMessage(jobId))
+            Transaction.Current.TransactionCompleted += (s, e) =>
             {
-                client.Send(message);   
-            }
+                // Because we are within a TransactionScope at this point the below
+                // call would not work (Local transactions are not supported with other resource managers/DTC
+                // exception is thrown) within being done after the transaction has completed
+                var client = _manager.GetClient(queue);
+
+                using (var message = new BrokeredMessage(jobId))
+                {
+                    client.Send(message);
+                }
+            };
         }
     }
 }

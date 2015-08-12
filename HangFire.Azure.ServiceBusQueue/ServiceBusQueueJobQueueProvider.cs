@@ -1,61 +1,34 @@
 ﻿using System;
 using System.Data;
-using HangFire.SqlServer;
-using Microsoft.ServiceBus;
-using Microsoft.ServiceBus.Messaging;
+using Hangfire.SqlServer;
 
-namespace HangFire.Azure.ServiceBusQueue
+namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueJobQueueProvider : IPersistentJobQueueProvider
     {
-        private readonly string _connectionString;
-        private readonly Action<QueueDescription> _configureAction;
-        private readonly string[] _queues;
+        private readonly ServiceBusQueueJobQueue _jobQueue;
+        private readonly ServiceBusQueueMonitoringApi _monitoringApi;
 
-        public ServiceBusQueueJobQueueProvider(
-            string connectionString, 
-            Action<QueueDescription> configureAction,
-            string[] queues)
+        public ServiceBusQueueJobQueueProvider(ServiceBusQueueOptions options)
         {
-            if (connectionString == null) throw new ArgumentNullException("connectionString");
-            if (queues == null) throw new ArgumentNullException("queues");
+            if (options == null) throw new ArgumentNullException("options");
 
-            _connectionString = connectionString;
-            _configureAction = configureAction;
-            _queues = queues;
+            options.Validate();
 
-            CreateQueuesIfNotExists();
+            var manager = new ServiceBusManager(options);
+
+            _jobQueue = new ServiceBusQueueJobQueue(manager);
+            _monitoringApi = new ServiceBusQueueMonitoringApi(manager, options.Queues);
         }
 
         public IPersistentJobQueue GetJobQueue(IDbConnection connection)
         {
-            return new ServiceBusQueueJobQueue(_connectionString);
+            return _jobQueue;
         }
 
         public IPersistentJobQueueMonitoringApi GetJobQueueMonitoringApi(IDbConnection connection)
         {
-            return new ServiceBusQueueMonitoringApi(_connectionString, _queues);
-        }
-
-        private void CreateQueuesIfNotExists()
-        {
-            foreach (var queue in _queues)
-            {
-                var namespaceManager =
-                    NamespaceManager.CreateFromConnectionString(_connectionString);
-
-                if (!namespaceManager.QueueExists(queue))
-                {
-                    var description = new QueueDescription(queue);
-
-                    if (_configureAction != null)
-                    {
-                        _configureAction(description);
-                    }
-
-                    namespaceManager.CreateQueue(description);
-                }
-            }
+            return _monitoringApi;
         }
     }
 }
