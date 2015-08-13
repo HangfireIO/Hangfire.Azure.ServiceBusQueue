@@ -10,6 +10,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueJobQueue : IPersistentJobQueue
     {
+        private static readonly TimeSpan MinSyncReceiveTimeout = TimeSpan.FromTicks(1);
         private static readonly TimeSpan SyncReceiveTimeout = TimeSpan.FromSeconds(5);
 
         private readonly ServiceBusManager _manager;
@@ -38,9 +39,9 @@ namespace Hangfire.Azure.ServiceBusQueue
                 {
                     var client = clients[queueIndex];
 
-                    message = queueIndex == 0
+                    message = queueIndex == queues.Length - 1
                         ? client.Receive(SyncReceiveTimeout)
-                        : client.Receive(new TimeSpan(1));
+                        : client.Receive(MinSyncReceiveTimeout);
                 }
                 catch (TimeoutException)
                 {
@@ -54,18 +55,18 @@ namespace Hangfire.Azure.ServiceBusQueue
 
         public void Enqueue(string queue, string jobId)
         {
-            Transaction.Current.TransactionCompleted += (s, e) =>
+            // Because we are within a TransactionScope at this point the below
+            // call would not work (Local transactions are not supported with other resource managers/DTC
+            // exception is thrown) without suppression
+            using (new TransactionScope(TransactionScopeOption.Suppress))
             {
-                // Because we are within a TransactionScope at this point the below
-                // call would not work (Local transactions are not supported with other resource managers/DTC
-                // exception is thrown) within being done after the transaction has completed
                 var client = _manager.GetClient(queue);
 
                 using (var message = new BrokeredMessage(jobId))
                 {
                     client.Send(message);
                 }
-            };
+            }
         }
     }
 }
