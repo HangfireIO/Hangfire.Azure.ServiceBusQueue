@@ -77,6 +77,7 @@
     <Compile Include="ServiceBusQueueMonitoringApi.cs" />
     <Compile Include="ServiceBusQueueOptions.cs" />
     <Compile Include="ServiceBusQueueSqlServerStorageExtensions.cs" />
+    <Compile Include="Properties\SharedAssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
