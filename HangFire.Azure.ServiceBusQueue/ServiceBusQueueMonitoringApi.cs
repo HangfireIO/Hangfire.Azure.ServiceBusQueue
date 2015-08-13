@@ -27,13 +27,26 @@ namespace Hangfire.Azure.ServiceBusQueue
         public IEnumerable<int> GetEnqueuedJobIds(string queue, int @from, int perPage)
         {
             var client = _manager.GetClient(queue);
-            var messages = client.PeekBatch(perPage).ToArray();
+            var jobIds = new List<int>();
 
-            var jobIds = messages.Select(x => int.Parse(x.GetBody<string>())).ToList();
+            // We have to overfetch to retrieve enough messages for paging.
+            // e.g. @from = 10 and page size = 20 we need 30 messages from the start
+            var messages = client.PeekBatch(0, @from + perPage).ToArray();
 
-            foreach (var message in messages)
+            // We could use LINQ here but to avoid creating lots of garbage lists
+            // through .Skip / .ToList etc. use a simple loop.
+            for (var i = 0; i < messages.Length; i++)
             {
-                message.Dispose();
+                var msg = messages[i];
+
+                // Only include the job id once we have skipped past the @from
+                // number
+                if (i >= @from)
+                {
+                    jobIds.Add(int.Parse(msg.GetBody<string>()));
+                }
+
+                msg.Dispose();
             }
 
             return jobIds;
