@@ -1,23 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using HangFire.SqlServer;
-using Microsoft.ServiceBus;
-using Microsoft.ServiceBus.Messaging;
+using Hangfire.SqlServer;
 
-namespace HangFire.Azure.ServiceBusQueue
+namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueMonitoringApi : IPersistentJobQueueMonitoringApi
     {
-        private readonly string _connectionString;
+        private readonly ServiceBusManager _manager;
         private readonly string[] _queues;
 
-        public ServiceBusQueueMonitoringApi(string connectionString, string[] queues)
+        public ServiceBusQueueMonitoringApi(ServiceBusManager manager, string[] queues)
         {
-            if (connectionString == null) throw new ArgumentNullException("connectionString");
+            if (manager == null) throw new ArgumentNullException("manager");
             if (queues == null) throw new ArgumentNullException("queues");
 
-            _connectionString = connectionString;
+            _manager = manager;
             _queues = queues;
         }
 
@@ -28,17 +26,30 @@ namespace HangFire.Azure.ServiceBusQueue
 
         public IEnumerable<int> GetEnqueuedJobIds(string queue, int @from, int perPage)
         {
-            var client = QueueClient.CreateFromConnectionString(_connectionString, queue);
-            var messages = client.PeekBatch(perPage).ToArray();
+            var client = _manager.GetClient(queue);
+            var jobIds = new List<int>();
 
-            var result = messages.Select(x => int.Parse(x.GetBody<string>()));
+            // We have to overfetch to retrieve enough messages for paging.
+            // e.g. @from = 10 and page size = 20 we need 30 messages from the start
+            var messages = client.PeekBatch(0, @from + perPage).ToArray();
 
-            foreach (var message in messages)
+            // We could use LINQ here but to avoid creating lots of garbage lists
+            // through .Skip / .ToList etc. use a simple loop.
+            for (var i = 0; i < messages.Length; i++)
             {
-                message.Dispose();
+                var msg = messages[i];
+
+                // Only include the job id once we have skipped past the @from
+                // number
+                if (i >= @from)
+                {
+                    jobIds.Add(int.Parse(msg.GetBody<string>()));
+                }
+
+                msg.Dispose();
             }
 
-            return result;
+            return jobIds;
         }
 
         public IEnumerable<int> GetFetchedJobIds(string queue, int @from, int perPage)
@@ -48,8 +59,7 @@ namespace HangFire.Azure.ServiceBusQueue
 
         public EnqueuedAndFetchedCountDto GetEnqueuedAndFetchedCount(string queue)
         {
-            var namespaceManager = NamespaceManager.CreateFromConnectionString(_connectionString);
-            var queueDescriptor = namespaceManager.GetQueue(queue);
+            var queueDescriptor = _manager.GetDescription(queue);
 
             return new EnqueuedAndFetchedCountDto
             {

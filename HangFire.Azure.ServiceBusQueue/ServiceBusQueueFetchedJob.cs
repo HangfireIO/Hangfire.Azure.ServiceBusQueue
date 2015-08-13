@@ -1,8 +1,8 @@
 ﻿using System;
-using HangFire.Storage;
+using Hangfire.Storage;
 using Microsoft.ServiceBus.Messaging;
 
-namespace HangFire.Azure.ServiceBusQueue
+namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueFetchedJob : IFetchedJob
     {
@@ -20,6 +20,12 @@ namespace HangFire.Azure.ServiceBusQueue
         }
 
         public string JobId { get; private set; }
+
+        public void Requeue()
+        {
+            _message.Abandon();
+            _completed = true;
+        }
 
         public void RemoveFromQueue()
         {

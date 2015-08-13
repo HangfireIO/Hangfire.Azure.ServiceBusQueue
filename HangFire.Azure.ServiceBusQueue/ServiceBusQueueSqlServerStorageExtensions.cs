@@ -1,9 +1,9 @@
 ﻿using System;
-using HangFire.SqlServer;
-using HangFire.States;
+using Hangfire.SqlServer;
+using Hangfire.States;
 using Microsoft.ServiceBus.Messaging;
 
-namespace HangFire.Azure.ServiceBusQueue
+namespace Hangfire.Azure.ServiceBusQueue
 {
     public static class ServiceBusQueueSqlServerStorageExtensions
     {
@@ -11,7 +11,11 @@ namespace HangFire.Azure.ServiceBusQueue
             this SqlServerStorage storage,
             string connectionString)
         {
-            return UseServiceBusQueues(storage, connectionString, new[] { EnqueuedState.DefaultQueue });
+            return UseServiceBusQueues(storage, new ServiceBusQueueOptions
+            {
+                ConnectionString = connectionString,
+                Queues = new[] { EnqueuedState.DefaultQueue }
+            });
         }
 
         public static SqlServerStorage UseServiceBusQueues(
@@ -19,7 +23,11 @@ namespace HangFire.Azure.ServiceBusQueue
             string connectionString,
             params string[] queues)
         {
-            return UseServiceBusQueues(storage, connectionString, null, queues);
+            return UseServiceBusQueues(storage, new ServiceBusQueueOptions
+            {
+                ConnectionString = connectionString,
+                Queues = queues
+            });
         }
 
         public static SqlServerStorage UseServiceBusQueues(
@@ -28,13 +36,24 @@ namespace HangFire.Azure.ServiceBusQueue
             Action<QueueDescription> configureAction,
             params string[] queues)
         {
+            return UseServiceBusQueues(storage, new ServiceBusQueueOptions
+            {
+                ConnectionString = connectionString,
+                Configure = configureAction,
+                Queues = queues
+            });
+        }
+
+        public static SqlServerStorage UseServiceBusQueues(
+            this SqlServerStorage storage,
+            ServiceBusQueueOptions options)
+        {
             if (storage == null) throw new ArgumentNullException("storage");
-            if (connectionString == null) throw new ArgumentNullException("connectionString");
+            if (options == null) throw new ArgumentNullException("options");
 
-            var provider = new ServiceBusQueueJobQueueProvider(
-                connectionString, configureAction, queues);
+            var provider = new ServiceBusQueueJobQueueProvider(options);
 
-            storage.QueueProviders.Add(provider, queues);
+            storage.QueueProviders.Add(provider, options.Queues);
 
             return storage;
         }
