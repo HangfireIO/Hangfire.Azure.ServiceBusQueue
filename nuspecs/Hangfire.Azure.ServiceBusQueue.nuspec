@@ -1,0 +1,25 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Hangfire.Azure.ServiceBusQueue</id>
+    <version>0.0.0</version>
+    <title>Hangfire Azure ServiceBus Queue</title>
+    <authors>Sergey Odinokov, Adam Barclay</authors>
+    <owners>odinserj</owners>
+    <projectUrl>https://github.com/odinserj/HangFire.Azure.ServiceBusQueue</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://raw.github.com/odinserj/HangFire.Azure.ServiceBusQueue/master/license.txt</licenseUrl>
+    <description>Azure ServiceBus Queue support for SQL Server job storage implementation</description>
+    <copyright>Copyright © 2015 Sergey Odinokov, Adam Barclay</copyright>
+    <tags>Hangfire Azure ServiceBus SqlServer</tags>
+	<dependencies>
+		<dependency id="Hangfire.SqlServer" version="1.4.5" />
+		<dependency id="WindowsAzure.ServiceBus" version="2.7.5" />
+	</dependencies>
+  </metadata>
+  <files>
+    <file src="Net45\Hangfire.Azure.ServiceBusQueue.dll" target="lib\net45" />
+    <file src="Net45\Hangfire.Azure.ServiceBusQueue.xml" target="lib\net45" />
+    <file src="Net45\Hangfire.Azure.ServiceBusQueue.pdb" target="lib\net45" />
+  </files>
+</package>

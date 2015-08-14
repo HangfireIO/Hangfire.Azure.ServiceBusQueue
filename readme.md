@@ -1,7 +1,7 @@
 Hangfire.Azure.ServiceBusQueue
 ============================
 
-[![Official Site](https://img.shields.io/badge/site-hangfire.io-blue.svg)](http://hangfire.io) [![Latest version](https://img.shields.io/badge/nuget-latest-blue.svg)](https://www.nuget.org/packages/HangFire.Azure.ServiceBusQueue/) [![Build status](https://ci.appveyor.com/api/projects/status/7so5rr4a2qy5abw6?retina=true)](https://ci.appveyor.com/project/odinserj/hangfire-azure-servicebusqueue) [![License MIT](https://img.shields.io/badge/license-MIT-green.svg)](http://opensource.org/licenses/MIT)
+[![Official Site](https://img.shields.io/badge/site-hangfire.io-blue.svg)](http://hangfire.io) [![Latest version](https://img.shields.io/badge/nuget-latest-blue.svg)](https://www.nuget.org/packages/HangFire.Azure.ServiceBusQueue/) [![Build status](https://ci.appveyor.com/api/projects/status/3l7dued0cvkjascj?svg=true)](https://ci.appveyor.com/project/odinserj/hangfire-azure-servicebusqueue) [![License MIT](https://img.shields.io/badge/license-MIT-green.svg)](http://opensource.org/licenses/MIT)
 
 What is it?
 -----------
