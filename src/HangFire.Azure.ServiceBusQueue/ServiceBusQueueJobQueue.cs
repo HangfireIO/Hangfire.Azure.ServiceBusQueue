@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Transactions;
@@ -67,6 +68,11 @@ namespace Hangfire.Azure.ServiceBusQueue
                     client.Send(message);
                 }
             }
+        }
+
+        public void Enqueue(IDbConnection connection, string queue, string jobId)
+        {
+            Enqueue(queue, jobId);
         }
     }
 }
