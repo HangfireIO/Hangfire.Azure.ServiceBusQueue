@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Transactions;
@@ -51,6 +52,13 @@ namespace Hangfire.Azure.ServiceBusQueue
             } while (message == null);
 
             return new ServiceBusQueueFetchedJob(message);
+        }
+
+        public void Enqueue(IDbConnection connection, string queue, string jobId)
+        {
+            // since we're not using any database here and writing into servicebus
+            // we can ignore this and just call Enqueue like implemented before
+            Enqueue(queue,jobId);
         }
 
         public void Enqueue(string queue, string jobId)

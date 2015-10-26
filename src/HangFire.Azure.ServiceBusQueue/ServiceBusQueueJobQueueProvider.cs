@@ -23,11 +23,23 @@ namespace Hangfire.Azure.ServiceBusQueue
 
         public IPersistentJobQueue GetJobQueue(IDbConnection connection)
         {
-            return _jobQueue;
+            return GetJobQueue();
         }
 
         public IPersistentJobQueueMonitoringApi GetJobQueueMonitoringApi(IDbConnection connection)
         {
+            return GetJobQueueMonitoringApi();
+        }
+
+        public IPersistentJobQueue GetJobQueue()
+        {
+            // juste return jobqueue
+            return _jobQueue;
+        }
+
+        public IPersistentJobQueueMonitoringApi GetJobQueueMonitoringApi()
+        {
+            // just return monitoringApi
             return _monitoringApi;
         }
     }
