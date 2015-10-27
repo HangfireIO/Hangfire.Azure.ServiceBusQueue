@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Hangfire.Azure.ServiceBusQueue</id>
-    <version>0.0.0</version>
+    <version>1.0.0.1</version>
     <title>Hangfire Azure ServiceBus Queue</title>
     <authors>Sergey Odinokov, Adam Barclay</authors>
     <owners>odinserj</owners>
@@ -13,7 +13,7 @@
     <copyright>Copyright © 2015 Sergey Odinokov, Adam Barclay</copyright>
     <tags>Hangfire Azure ServiceBus SqlServer</tags>
 	<dependencies>
-		<dependency id="Hangfire.SqlServer" version="1.4.5" />
+		<dependency id="Hangfire.SqlServer" version="1.5.2" />
 		<dependency id="WindowsAzure.ServiceBus" version="2.7.5" />
 	</dependencies>
   </metadata>
