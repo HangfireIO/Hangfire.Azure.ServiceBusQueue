@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Threading;
 using Hangfire.Storage;
 using Microsoft.ServiceBus.Messaging;
+using System.Threading.Tasks;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
@@ -9,7 +11,7 @@ namespace Hangfire.Azure.ServiceBusQueue
         private readonly BrokeredMessage _message;
         private bool _completed;
         private bool _disposed;
-
+        private readonly CancellationTokenSource _cancellationToken;
         public ServiceBusQueueFetchedJob(BrokeredMessage message)
         {
             if (message == null) throw new ArgumentNullException("message");
@@ -17,31 +19,77 @@ namespace Hangfire.Azure.ServiceBusQueue
             _message = message;
 
             JobId = _message.GetBody<string>();
+
+            _cancellationToken = new CancellationTokenSource();
+        }
+
+        public void CheckForValidLock()
+        {
+            Task.Factory.StartNew(() =>
+            {
+                while (!_cancellationToken.Token.IsCancellationRequested)
+                {
+                    if (DateTime.UtcNow > _message.LockedUntilUtc.AddSeconds(-10))
+                    {
+                        _message.RenewLock();
+                    }
+
+                    Task.Delay(500);
+                }
+            }, _cancellationToken.Token);
         }
 
         public string JobId { get; private set; }
 
         public void Requeue()
         {
-            _message.Abandon();
-            _completed = true;
+            try
+            {
+                _message.Abandon();
+            }
+            finally
+            {
+                _completed = true;
+                _cancellationToken.Cancel();
+            }
+            
         }
 
         public void RemoveFromQueue()
         {
-            _message.Complete();
-            _completed = true;
+            try
+            {
+                _message.Complete();
+            }
+            catch (MessageLockLostException) { }
+            catch (Exception)
+            {
+                _message.Abandon();
+                throw;
+            }
+            finally
+            {
+                _completed = true;
+                _cancellationToken.Cancel();
+            }
         }
 
         public void Dispose()
         {
-            if (!_completed && !_disposed)
+            try
             {
-                _message.Abandon();
+                if (!_completed && !_disposed)
+                {
+                    _message.Abandon();
+                }
+            }
+            finally
+            {
+                _message.Dispose();
+                _disposed = true;
+                _cancellationToken.Cancel();
             }
 
-            _message.Dispose();
-            _disposed = true;
         }
     }
 }
