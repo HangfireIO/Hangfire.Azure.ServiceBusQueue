@@ -8,6 +8,8 @@ using Microsoft.ServiceBus.Messaging;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
+    using System.Data;
+
     internal class ServiceBusQueueJobQueue : IPersistentJobQueue
     {
         private static readonly TimeSpan MinSyncReceiveTimeout = TimeSpan.FromTicks(1);
@@ -53,7 +55,7 @@ namespace Hangfire.Azure.ServiceBusQueue
             return new ServiceBusQueueFetchedJob(message);
         }
 
-        public void Enqueue(string queue, string jobId)
+        public void Enqueue(IDbConnection connection, string queue, string jobId)
         {
             // Because we are within a TransactionScope at this point the below
             // call would not work (Local transactions are not supported with other resource managers/DTC

@@ -13,7 +13,8 @@
     <copyright>Copyright © 2015 Sergey Odinokov, Adam Barclay</copyright>
     <tags>Hangfire Azure ServiceBus SqlServer</tags>
 	<dependencies>
-		<dependency id="Hangfire.SqlServer" version="1.4.5" />
+		<dependency id="Hangfire.Core" version="1.5" />
+		<dependency id="Hangfire.SqlServer" version="1.5" />
 		<dependency id="WindowsAzure.ServiceBus" version="2.7.5" />
 	</dependencies>
   </metadata>
