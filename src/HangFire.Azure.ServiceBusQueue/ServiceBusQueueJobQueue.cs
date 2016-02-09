@@ -5,11 +5,10 @@ using System.Transactions;
 using Hangfire.SqlServer;
 using Hangfire.Storage;
 using Microsoft.ServiceBus.Messaging;
+using System.Data;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
-    using System.Data;
-
     internal class ServiceBusQueueJobQueue : IPersistentJobQueue
     {
         private static readonly TimeSpan MinSyncReceiveTimeout = TimeSpan.FromTicks(1);

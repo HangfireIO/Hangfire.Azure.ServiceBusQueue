@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
+using Hangfire.Logging;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusManager
     {
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
+
         private readonly Dictionary<string, QueueClient> _clients;
         private readonly ServiceBusQueueOptions _options;
         private readonly NamespaceManager _namespaceManager;
@@ -31,6 +34,8 @@ namespace Hangfire.Azure.ServiceBusQueue
 
             if (!_clients.TryGetValue(prefixedQueue, out client))
             {
+                Logger.InfoFormat("Creating new QueueClient for queue {0}", prefixedQueue);
+
                 client = QueueClient.CreateFromConnectionString(_options.ConnectionString, prefixedQueue, ReceiveMode.PeekLock);
 
                 _clients[prefixedQueue] = client;
@@ -48,11 +53,15 @@ namespace Hangfire.Azure.ServiceBusQueue
         {
             foreach (var queue in options.Queues)
             {
-                var prefixed = options.GetQueueName(queue);
+                var prefixedQueue = options.GetQueueName(queue);
 
-                if (!namespaceManager.QueueExists(prefixed))
+                Logger.InfoFormat("Checking if queue {0} exists", prefixedQueue);
+
+                if (!namespaceManager.QueueExists(prefixedQueue))
                 {
-                    var description = new QueueDescription(prefixed);
+                    Logger.InfoFormat("Creating new queue {0}", prefixedQueue);
+
+                    var description = new QueueDescription(prefixedQueue);
 
                     if (options.Configure != null)
                     {
