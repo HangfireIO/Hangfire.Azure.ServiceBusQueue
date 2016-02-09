@@ -10,9 +10,12 @@ namespace Hangfire.Azure.ServiceBusQueue
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
+        // Stores the pre-created QueueClients (note the key is the unprefixed queue name)
         private readonly Dictionary<string, QueueClient> _clients;
+
         private readonly ServiceBusQueueOptions _options;
         private readonly NamespaceManager _namespaceManager;
+        private readonly MessagingFactory _messagingFactory;
 
         public ServiceBusManager(ServiceBusQueueOptions options)
         {
@@ -22,26 +25,14 @@ namespace Hangfire.Azure.ServiceBusQueue
 
             _clients = new Dictionary<string, QueueClient>();
             _namespaceManager = NamespaceManager.CreateFromConnectionString(options.ConnectionString);
+            _messagingFactory = MessagingFactory.CreateFromConnectionString(options.ConnectionString);
 
-            CreateQueuesIfNotExists(_namespaceManager, options);
+            CreateQueueClients();
         }
 
         public QueueClient GetClient(string queue)
         {
-            var prefixedQueue = _options.GetQueueName(queue);
-
-            QueueClient client;
-
-            if (!_clients.TryGetValue(prefixedQueue, out client))
-            {
-                Logger.InfoFormat("Creating new QueueClient for queue {0}", prefixedQueue);
-
-                client = QueueClient.CreateFromConnectionString(_options.ConnectionString, prefixedQueue, ReceiveMode.PeekLock);
-
-                _clients[prefixedQueue] = client;
-            }
-
-            return client;
+            return this._clients[queue];
         }
 
         public QueueDescription GetDescription(string queue)
@@ -49,28 +40,42 @@ namespace Hangfire.Azure.ServiceBusQueue
             return _namespaceManager.GetQueue(_options.GetQueueName(queue));
         }
 
-        private static void CreateQueuesIfNotExists(NamespaceManager namespaceManager, ServiceBusQueueOptions options)
+        private void CreateQueueClients()
         {
-            foreach (var queue in options.Queues)
+            foreach (var queue in _options.Queues)
             {
-                var prefixedQueue = options.GetQueueName(queue);
+                var prefixedQueue = _options.GetQueueName(queue);
 
-                Logger.InfoFormat("Checking if queue {0} exists", prefixedQueue);
+                CreateQueueIfNotExists(prefixedQueue, _namespaceManager, _options);
 
-                if (!namespaceManager.QueueExists(prefixedQueue))
-                {
-                    Logger.InfoFormat("Creating new queue {0}", prefixedQueue);
+                Logger.TraceFormat("Creating new QueueClient for queue {0}", prefixedQueue);
 
-                    var description = new QueueDescription(prefixedQueue);
+                var client = this._messagingFactory.CreateQueueClient(prefixedQueue, ReceiveMode.PeekLock);
 
-                    if (options.Configure != null)
-                    {
-                        options.Configure(description);
-                    }
-
-                    namespaceManager.CreateQueue(description);
-                }
+                // Do not store as prefixed queue to avoid having to re-create name in GetClient method
+                _clients[queue] = client;
             }
+        }
+
+        private static void CreateQueueIfNotExists(string prefixedQueue, NamespaceManager namespaceManager, ServiceBusQueueOptions options)
+        {
+            Logger.InfoFormat("Checking if queue {0} exists", prefixedQueue);
+
+            if (namespaceManager.QueueExists(prefixedQueue))
+            {
+                return;
+            }
+
+            Logger.InfoFormat("Creating new queue {0}", prefixedQueue);
+
+            var description = new QueueDescription(prefixedQueue);
+
+            if (options.Configure != null)
+            {
+                options.Configure(description);
+            }
+
+            namespaceManager.CreateQueue(description);
         }
     }
 }
