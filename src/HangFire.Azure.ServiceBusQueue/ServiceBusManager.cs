@@ -61,7 +61,7 @@ namespace Hangfire.Azure.ServiceBusQueue
         {
             if (options.CheckAndCreateQueues == false)
             {
-                Logger.Info($"Not checking for the existence of the queue {prefixedQueue}");
+                Logger.InfoFormat("Not checking for the existence of the queue {0}", prefixedQueue);
 
                 return;
             }
