@@ -10,4 +10,4 @@ using System.Runtime.InteropServices;
 [assembly: CLSCompliant(false)]
 
 // Don't edit manually! Use `build.bat version` command instead!
-[assembly: AssemblyVersion("2.1.0")]
+[assembly: AssemblyVersion("2.1.1")]
