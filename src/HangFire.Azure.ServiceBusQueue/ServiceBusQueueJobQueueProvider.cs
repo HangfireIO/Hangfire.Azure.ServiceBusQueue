@@ -19,6 +19,7 @@ namespace Hangfire.Azure.ServiceBusQueue
             options.Validate();
 
             Logger.Info("Using the following options for Azure service bus:");
+            Logger.InfoFormat("    Check and create queues: {0}", options.CheckAndCreateQueues);
             Logger.InfoFormat("    Queue prefix: {0}", options.QueuePrefix);
             Logger.InfoFormat("    Queues: [{0}]", string.Join(", ", options.Queues));
 

@@ -5,6 +5,11 @@ namespace Hangfire.Azure.ServiceBusQueue
 {
     public class ServiceBusQueueOptions
     {
+        public ServiceBusQueueOptions()
+        {
+            this.CheckAndCreateQueues = true;
+        }
+
         /// <summary>
         /// Gets or sets the prefix that will be prepended to all queue names in
         /// the service bus (e.g. if the prefix is "a-prefix-" then the default queue
@@ -17,6 +22,12 @@ namespace Hangfire.Azure.ServiceBusQueue
         /// size of default TTL.
         /// </summary>
         public Action<QueueDescription> Configure { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value which indicates whether or not to automatically create and
+        /// configure queues.
+        /// </summary>
+        public bool CheckAndCreateQueues { get; set; }
 
         public string ConnectionString { get; set; }
 

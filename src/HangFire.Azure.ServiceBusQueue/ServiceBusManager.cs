@@ -59,6 +59,13 @@ namespace Hangfire.Azure.ServiceBusQueue
 
         private static void CreateQueueIfNotExists(string prefixedQueue, NamespaceManager namespaceManager, ServiceBusQueueOptions options)
         {
+            if (options.CheckAndCreateQueues == false)
+            {
+                Logger.Info($"Not checking for the existence of the queue {prefixedQueue}");
+
+                return;
+            }
+
             Logger.InfoFormat("Checking if queue {0} exists", prefixedQueue);
 
             if (namespaceManager.QueueExists(prefixedQueue))
@@ -75,7 +82,19 @@ namespace Hangfire.Azure.ServiceBusQueue
                 options.Configure(description);
             }
 
-            namespaceManager.CreateQueue(description);
+            try
+            {
+                namespaceManager.CreateQueue(description);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                var errorMessage = string.Format(
+                    "Queue {0} could not be created, likely due to missing the 'Manage' permission. " + 
+                    "Either create the queue manually, or grant the Manage permission", 
+                    prefixedQueue);
+
+                throw new UnauthorizedAccessException(errorMessage, ex);
+            }
         }
     }
 }

@@ -47,6 +47,16 @@ namespace Hangfire.Azure.ServiceBusQueue
                 catch (TimeoutException)
                 {
                 }
+                catch (MessagingEntityNotFoundException ex)
+                {
+                    var errorMessage = string.Format(
+                        "Queue {0} could not be found. Either create the queue manually, " +
+                        "or grant the Manage permission and set ServiceBusQueueOptions.CheckAndCreateQueues to true", 
+
+                        clients[queueIndex].Path);
+
+                    throw new UnauthorizedAccessException(errorMessage, ex);
+                }
 
                 queueIndex = (queueIndex + 1) % queues.Length;
             } while (message == null);
