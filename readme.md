@@ -8,12 +8,12 @@ What is it?
 
 Adds support for using Azure Service Bus Queues with [Hangfire](http://hangfire.io)'s SQL storage provider to reduce latency and remove the need to poll the database for new jobs.
 
-All job data continues to be stored and maintained within SQL storage, but polling is removed in favur of pushing the job ids through the service bus.
+All job data continues to be stored and maintained within SQL storage, but polling is removed in favour of pushing the job ids through the service bus.
 
 Installation
 -------------
 
-Hangfire.Azure.ServiceBusQueue is available as a NuGet package. So, you can install it using the NuGet Package Console window:
+Hangfire.Azure.ServiceBusQueue is available as a NuGet package. Install it using the NuGet Package Console window:
 
 ```
 PM> Install-Package Hangfire.Azure.ServiceBusQueue
@@ -28,7 +28,7 @@ To use the queue it needs to be added to your existing SQL Server storage config
 var sqlStorage = new SqlServerStorage("<connection string>");
 
 // The connection string *must* be for the root namespace and have the "Manage"
-// permission as queues will be created on startup if they do not exist
+// permission if used by the dashboard
 var connectionString = CloudConfigurationManager.GetSetting("Microsoft.ServiceBus.ConnectionString");
 
 // You can configure queues on first creation using this action
@@ -56,11 +56,24 @@ sqlStorage.UseServiceBusQueues(new ServiceBusQueueOptions
         
         // The actual queues used in Azure will have this prefix if specified
         // (e.g. the "default" queue will be created as "my-prefix-default")
+        //
+        // This can be useful in development environments particularly where the machine
+        // name could be used to separate individual developers machines automatically
+        // (i.e. "my-prefix-{machine-name}".Replace("{machine-name}", Environment.MachineName))
         QueuePrefix = "my-prefix-",
         
         // The queues to monitor. This *must* be specified, even to set just
         // the default queue as done here
-        Queues = new [] { EnqueuedState.DefaultQueue }
+        Queues = new [] { EnqueuedState.DefaultQueue },
+        
+        // By default queues will be checked and created on startup. This option
+        // can be disabled if the application will only be sending / listening to 
+        // the queue and you want to remove the 'Manage' permission from the shared
+        // access policy.
+        //
+        // Note that the dashboard *must* have the 'Manage' permission otherwise the
+        // queue length cannot be read
+        CheckAndCreateQueues = false
     });
 
 GlobalConfiguration.Configuration
