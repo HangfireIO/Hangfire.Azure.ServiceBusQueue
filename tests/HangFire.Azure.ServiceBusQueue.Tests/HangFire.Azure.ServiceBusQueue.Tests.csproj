@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{C9D29F07-4445-4FCB-BC38-2221B2B38231}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HangFire.Azure.ServiceBusQueue.Tests</RootNamespace>
+    <AssemblyName>HangFire.Azure.ServiceBusQueue.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Hangfire.Core, Version=1.5.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Hangfire.Core.1.5.2\lib\net45\Hangfire.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Hangfire.SqlServer, Version=1.5.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Hangfire.SqlServer.1.5.2\lib\net45\Hangfire.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ServiceBus, Version=2.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\WindowsAzure.ServiceBus.2.7.5\lib\net40-full\Microsoft.ServiceBus.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=1.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.WindowsAzure.ConfigurationManager.1.7.0.0\lib\net35-full\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.5.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ServiceBusQueueJobQueueFacts.cs" />
+    <Compile Include="ServiceBusQueueMonitoringApiFacts.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestServiceBusQueueOptions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\HangFire.Azure.ServiceBusQueue\Hangfire.Azure.ServiceBusQueue.csproj">
+      <Project>{4cc51f69-0311-4485-b7de-9ecab3a1b5e5}</Project>
+      <Name>Hangfire.Azure.ServiceBusQueue</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

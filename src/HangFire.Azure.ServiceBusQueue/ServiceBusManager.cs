@@ -50,10 +50,8 @@ namespace Hangfire.Azure.ServiceBusQueue
 
                 Logger.TraceFormat("Creating new QueueClient for queue {0}", prefixedQueue);
 
-                var client = this._messagingFactory.CreateQueueClient(prefixedQueue, ReceiveMode.PeekLock);
-
                 // Do not store as prefixed queue to avoid having to re-create name in GetClient method
-                _clients[queue] = client;
+                _clients[queue] = this._messagingFactory.CreateQueueClient(prefixedQueue, ReceiveMode.PeekLock);
             }
         }
 
@@ -90,7 +88,7 @@ namespace Hangfire.Azure.ServiceBusQueue
             {
                 var errorMessage = string.Format(
                     "Queue '{0}' could not be checked / created, likely due to missing the 'Manage' permission. " +
-                    "You just either grant the 'Manage' permission, or setServiceBusQueueOptions.CheckAndCreateQueues to false", 
+                    "You must either grant the 'Manage' permission, or setServiceBusQueueOptions.CheckAndCreateQueues to false", 
                     prefixedQueue);
 
                 throw new UnauthorizedAccessException(errorMessage, ex);
