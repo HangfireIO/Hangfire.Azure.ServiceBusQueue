@@ -32,7 +32,7 @@ namespace Hangfire.Azure.ServiceBusQueue
             // We have to overfetch to retrieve enough messages for paging.
             // e.g. @from = 10 and page size = 20 we need 30 messages from the start
             var messages = client.PeekBatch(0, @from + perPage).ToArray();
-
+            
             // We could use LINQ here but to avoid creating lots of garbage lists
             // through .Skip / .ToList etc. use a simple loop.
             for (var i = 0; i < messages.Length; i++)
@@ -63,7 +63,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 
             return new EnqueuedAndFetchedCountDto
             {
-                EnqueuedCount = (int) queueDescriptor.MessageCount,
+                EnqueuedCount = (int) queueDescriptor.MessageCountDetails.ActiveMessageCount,
                 FetchedCount = null
             };
         }
