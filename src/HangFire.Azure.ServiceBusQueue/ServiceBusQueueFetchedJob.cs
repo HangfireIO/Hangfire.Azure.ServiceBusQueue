@@ -15,7 +15,6 @@ namespace Hangfire.Azure.ServiceBusQueue
         private bool _completed;
         private bool _disposed;
 
-
         public ServiceBusQueueFetchedJob(BrokeredMessage message)
         {
             if (message == null) throw new ArgumentNullException("message");
@@ -30,7 +29,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 
         public string JobId { get; private set; }
 
-        public BrokeredMessage Message => this._message;
+        public BrokeredMessage Message { get { return this._message; } }
 
         public void Requeue()
         {
