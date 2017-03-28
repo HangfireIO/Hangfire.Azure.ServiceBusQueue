@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Hangfire.Storage;
@@ -66,12 +67,19 @@ namespace Hangfire.Azure.ServiceBusQueue
             {
                 while (!_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    if (DateTime.UtcNow > _message.LockedUntilUtc.AddSeconds(-1))
+                    // We wait until a second before the lock is due to expire to give us
+                    // plenty of time to wake up and communicate with queue to renew the
+                    // lock of this message before expiration.
+                    var toWait = _message.LockedUntilUtc - DateTime.UtcNow - TimeSpan.FromSeconds(1);
+
+                    await Task.Delay(toWait, _cancellationTokenSource.Token);
+
+                    // Double check we have not been cancelled to avoid renewing a lock
+                    // unnecessarily
+                    if (!_cancellationTokenSource.Token.IsCancellationRequested)
                     {
                         _message.RenewLock();
                     }
-
-                    await Task.Delay(500, _cancellationTokenSource.Token);
                 }
             }, _cancellationTokenSource.Token);
         }

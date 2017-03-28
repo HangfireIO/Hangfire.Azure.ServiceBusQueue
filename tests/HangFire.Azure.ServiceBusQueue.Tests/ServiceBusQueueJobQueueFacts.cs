@@ -19,15 +19,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         [SetUp]
         public void SetUpQueue()
         {
-            options = new TestServiceBusQueueOptions
-            {
-                Configure = d => d.LockDuration = TimeSpan.FromSeconds(5)
-            };
-
-            provider = new ServiceBusQueueJobQueueProvider(options);
-
-            queue = provider.GetJobQueue();
-            monitor = provider.GetJobQueueMonitoringApi();
+            SetUpQueue(TimeSpan.FromSeconds(5));
         }
 
         [TearDown]
@@ -141,17 +133,24 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
             Assert.That(counts.EnqueuedCount, Is.EqualTo(1));
         }
 
-        // Ensure we keep the message alive during a long processing period.
         [Test]
-        public void Dequeue_Complete_AfterLockTime_ShouldRemoveFromQueue()
+        [TestCase(5000, 10000)]
+        [TestCase(5000, 1000)]
+        [TestCase(5000, 2100)]
+        [TestCase(500, 499)]
+        [TestCase(50, 111)]
+        // Ensure we keep the message alive during a long processing period.
+        public void Dequeue_Complete_AfterLockTime_ShouldRemoveFromQueue(int lockTimeMs, int processingTimeMs)
         {
             // Arrange
+            SetUpQueue(TimeSpan.FromMilliseconds(lockTimeMs));
+
             queue.Enqueue(null, options.Queues[0], "1");
 
             // Act
             var job = queue.Dequeue(options.Queues, CreateTimingOutCancellationToken());
 
-            Thread.Sleep(TimeSpan.FromSeconds(15));
+            Thread.Sleep(TimeSpan.FromMilliseconds(processingTimeMs));
             job.RemoveFromQueue();
 
             // Assert
@@ -164,6 +163,19 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         {
             var source = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             return source.Token;
+        }
+
+        private void SetUpQueue(TimeSpan lockDuration)
+        {
+            options = new TestServiceBusQueueOptions
+            {
+                Configure = d => d.LockDuration = lockDuration
+            };
+
+            provider = new ServiceBusQueueJobQueueProvider(options);
+
+            queue = provider.GetJobQueue();
+            monitor = provider.GetJobQueueMonitoringApi();
         }
     }
 }
