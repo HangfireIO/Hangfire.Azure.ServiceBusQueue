@@ -27,6 +27,11 @@ namespace Hangfire.Azure.ServiceBusQueue
         /// Gets or sets a value which indicates whether or not to automatically create and
         /// configure queues.
         /// </summary>
+        /// <remarks>
+        /// On initialisation if this property is <cc>true</cc> we will create and check all queues
+        /// immediately, otherwise we delay the creation of the queue clients until they are first
+        /// requested.
+        /// </remarks>
         public bool CheckAndCreateQueues { get; set; }
 
         public string ConnectionString { get; set; }

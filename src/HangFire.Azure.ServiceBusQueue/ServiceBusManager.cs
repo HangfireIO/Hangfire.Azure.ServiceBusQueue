@@ -23,16 +23,26 @@ namespace Hangfire.Azure.ServiceBusQueue
 
             _options = options;
 
-            _clients = new Dictionary<string, QueueClient>();
+            _clients = new Dictionary<string, QueueClient>(options.Queues.Length);
             _namespaceManager = NamespaceManager.CreateFromConnectionString(options.ConnectionString);
             _messagingFactory = MessagingFactory.CreateFromConnectionString(options.ConnectionString);
 
-            CreateQueueClients();
+            // If we have this option set to true then we will create all clients up-front, otherwise
+            // the creation will be delayed until the first client is retrieved
+            if (options.CheckAndCreateQueues)
+            {
+                CreateQueueClients();
+            }
         }
 
         public QueueClient GetClient(string queue)
         {
-            return this._clients[queue];
+            if (_clients.Count != _options.Queues.Length)
+            {
+                CreateQueueClients();
+            }
+            
+            return _clients[queue];
         }
 
         public QueueDescription GetDescription(string queue)
