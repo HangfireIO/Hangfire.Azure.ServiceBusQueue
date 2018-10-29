@@ -35,13 +35,15 @@ namespace Hangfire.Azure.ServiceBusQueue
             }
         }
 
+        public ServiceBusQueueOptions Options { get { return _options; } }
+
         public QueueClient GetClient(string queue)
         {
             if (_clients.Count != _options.Queues.Length)
             {
                 CreateQueueClients();
             }
-            
+
             return _clients[queue];
         }
 
@@ -98,7 +100,7 @@ namespace Hangfire.Azure.ServiceBusQueue
             {
                 var errorMessage = string.Format(
                     "Queue '{0}' could not be checked / created, likely due to missing the 'Manage' permission. " +
-                    "You must either grant the 'Manage' permission, or setServiceBusQueueOptions.CheckAndCreateQueues to false", 
+                    "You must either grant the 'Manage' permission, or set ServiceBusQueueOptions.CheckAndCreateQueues to false",
                     prefixedQueue);
 
                 throw new UnauthorizedAccessException(errorMessage, ex);

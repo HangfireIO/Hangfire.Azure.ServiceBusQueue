@@ -12,7 +12,6 @@ namespace Hangfire.Azure.ServiceBusQueue
     internal class ServiceBusQueueJobQueue : IPersistentJobQueue
     {
         private static readonly TimeSpan MinSyncReceiveTimeout = TimeSpan.FromTicks(1);
-        private static readonly TimeSpan SyncReceiveTimeout = TimeSpan.FromSeconds(5);
 
         private readonly ServiceBusManager _manager;
 
@@ -39,9 +38,10 @@ namespace Hangfire.Azure.ServiceBusQueue
                 try
                 {
                     var client = clients[queueIndex];
+                    var isLastQueue = queueIndex == queues.Length - 1;
 
-                    message = queueIndex == queues.Length - 1
-                        ? client.Receive(SyncReceiveTimeout)
+                    message = isLastQueue
+                        ? client.Receive(_manager.Options.LoopReceiveTimeout) // Last queue
                         : client.Receive(MinSyncReceiveTimeout);
                 }
                 catch (TimeoutException)
@@ -51,7 +51,7 @@ namespace Hangfire.Azure.ServiceBusQueue
                 {
                     var errorMessage = string.Format(
                         "Queue {0} could not be found. Either create the queue manually, " +
-                        "or grant the Manage permission and set ServiceBusQueueOptions.CheckAndCreateQueues to true", 
+                        "or grant the Manage permission and set ServiceBusQueueOptions.CheckAndCreateQueues to true",
 
                         clients[queueIndex].Path);
 
