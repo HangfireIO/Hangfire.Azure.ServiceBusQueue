@@ -72,7 +72,7 @@ namespace Hangfire.Azure.ServiceBusQueue
             {
                 var client = _manager.GetClient(queue);
 
-                using (var message = new BrokeredMessage(jobId))
+                using (var message = new BrokeredMessage(jobId) { MessageId = jobId })
                 {
                     _manager.Options.RetryPolicy.Execute(() => client.Send(message));
                 }
