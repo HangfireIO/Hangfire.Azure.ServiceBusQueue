@@ -52,7 +52,6 @@ namespace Hangfire.Azure.ServiceBusQueue
                     var errorMessage = string.Format(
                         "Queue {0} could not be found. Either create the queue manually, " +
                         "or grant the Manage permission and set ServiceBusQueueOptions.CheckAndCreateQueues to true",
-
                         clients[queueIndex].Path);
 
                     throw new UnauthorizedAccessException(errorMessage, ex);
@@ -75,7 +74,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 
                 using (var message = new BrokeredMessage(jobId))
                 {
-                    client.Send(message);
+                    _manager.Options.RetryPolicy.Execute(() => client.Send(message));
                 }
             }
         }

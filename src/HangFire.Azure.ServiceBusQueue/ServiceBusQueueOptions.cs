@@ -9,6 +9,7 @@ namespace Hangfire.Azure.ServiceBusQueue
         {
             this.CheckAndCreateQueues = true;
             this.LoopReceiveTimeout = TimeSpan.FromMilliseconds(500);
+            this.RetryPolicy = new LinearRetryPolicy(3, TimeSpan.FromSeconds(1));
         }
 
         /// <summary>
@@ -49,6 +50,15 @@ namespace Hangfire.Azure.ServiceBusQueue
         /// </remarks>
         /// <value>Defaults to <c>TimeSpan.FromMilliseconds(500)</c></value>
         public TimeSpan LoopReceiveTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the retry policy for enqueueing messages
+        /// </summary>
+        /// <remarks>
+        /// The default policy is a <see cref="LinearRetryPolicy" /> with <see cref="LinearRetryPolicy.RetryCount"/> of 3
+        /// and a <see cref="LinearRetryPolicy.RetryDelay"/> of 1 second.
+        /// </remarks>
+        public IRetryPolicy RetryPolicy { get; set; }
 
         internal string GetQueueName(string name)
         {

@@ -69,6 +69,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IRetryPolicy.cs" />
+    <Compile Include="LinearRetryPolicy.cs" />
     <Compile Include="ServiceBusQueueFetchedJob.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceBusQueueJobQueue.cs" />
