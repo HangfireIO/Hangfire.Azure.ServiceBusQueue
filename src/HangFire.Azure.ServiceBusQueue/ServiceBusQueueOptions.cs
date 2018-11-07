@@ -41,6 +41,17 @@ namespace Hangfire.Azure.ServiceBusQueue
         public string[] Queues { get; set; }
 
         /// <summary>
+        /// Gets or sets a value which specifies the <see cref="Microsoft.ServiceBus.Messaging.QueueDescription.RequiresDuplicateDetection"/>
+        /// setting on creating a service bus queue.
+        /// </summary>
+        /// <remarks>
+        /// <para>This can provide resilience against retried messages due to transient errors within Hangfire, but will not help
+        /// with application-level issues.</para>
+        /// <para>This setting can only be applied to premium tier namespace, leave null if using a standard tier namespace.</para>
+        /// </remarks>
+        public bool? RequiresDuplicateDetection { get; set; }
+
+        /// <summary>
         /// Gets or sets a timeout that is used between loop runs of receiving messages from Azure Service Bus. This is the timeout
         /// used when waiting on the last queue before looping around again (does not apply when only a single-queue exists).
         /// </summary>
