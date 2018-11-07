@@ -87,10 +87,11 @@ namespace Hangfire.Azure.ServiceBusQueue
 
                 Logger.InfoFormat("Creating new queue {0}", prefixedQueue);
 
-                var description = new QueueDescription(prefixedQueue)
+                var description = new QueueDescription(prefixedQueue);
+                if (options.RequiresDuplicateDetection != null)
                 {
-                    RequiresDuplicateDetection = true
-                };
+                    description.RequiresDuplicateDetection = options.RequiresDuplicateDetection.Value;
+                }
 
                 if (options.Configure != null)
                 {
