@@ -51,7 +51,7 @@ sqlStorage.UseServiceBusQueues(connectionString, configureAction, "critical", "d
 sqlStorage.UseServiceBusQueues(new ServiceBusQueueOptions
     {
         ConnectionString = connectionString,
-        
+                
         Configure = configureAction,
         
         // The actual queues used in Azure will have this prefix if specified
@@ -73,7 +73,12 @@ sqlStorage.UseServiceBusQueues(new ServiceBusQueueOptions
         //
         // Note that the dashboard *must* have the 'Manage' permission otherwise the
         // queue length cannot be read
-        CheckAndCreateQueues = false
+        CheckAndCreateQueues = false,
+        
+        // Typically a lower value is desired to keep the throughput of message processing high. A lower timeout means more calls to
+        // Azure Service Bus which can increase costs, especially on an under-utilised server with few jobs.
+        // Use a Higher value for lower costs in non production or non critical jobs
+        LoopReceiveTimeout = TimeSpan.FromMilliseconds(500)
     });
 
 GlobalConfiguration.Configuration
