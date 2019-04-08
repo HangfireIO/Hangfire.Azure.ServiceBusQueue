@@ -24,10 +24,10 @@ namespace Hangfire.Azure.ServiceBusQueue
             return _queues;
         }
 
-        public IEnumerable<int> GetEnqueuedJobIds(string queue, int @from, int perPage)
+        public IEnumerable<long> GetEnqueuedJobIds(string queue, int @from, int perPage)
         {
             var client = _manager.GetClient(queue);
-            var jobIds = new List<int>();
+            var jobIds = new List<long>();
 
             // We have to overfetch to retrieve enough messages for paging.
             // e.g. @from = 10 and page size = 20 we need 30 messages from the start
@@ -43,7 +43,7 @@ namespace Hangfire.Azure.ServiceBusQueue
                 // number
                 if (i >= @from)
                 {
-                    jobIds.Add(int.Parse(msg.GetBody<string>()));
+                    jobIds.Add(long.Parse(msg.GetBody<string>()));
                 }
 
                 msg.Dispose();
@@ -52,9 +52,9 @@ namespace Hangfire.Azure.ServiceBusQueue
             return jobIds;
         }
 
-        public IEnumerable<int> GetFetchedJobIds(string queue, int @from, int perPage)
+        public IEnumerable<long> GetFetchedJobIds(string queue, int @from, int perPage)
         {
-            return Enumerable.Empty<int>();
+            return Enumerable.Empty<long>();
         }
 
         public EnqueuedAndFetchedCountDto GetEnqueuedAndFetchedCount(string queue)

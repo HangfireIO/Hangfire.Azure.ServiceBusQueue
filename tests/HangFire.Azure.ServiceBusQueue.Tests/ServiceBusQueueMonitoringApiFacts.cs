@@ -91,7 +91,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
             var counts = monitor.GetEnqueuedJobIds(options.Queues[0], 0, 5);
 
             // Assert/
-            Assert.That(counts, Is.EquivalentTo(new[] { 1, 2, 3, 4 }));
+            Assert.That(counts, Is.EquivalentTo(new long[] { 1, 2, 3, 4 }));
         }
 
         [Test]
@@ -108,8 +108,8 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
             var counts2 = monitor.GetEnqueuedJobIds(options.Queues[0], 2, 2);
 
             // Assert/
-            Assert.That(counts1, Is.EquivalentTo(new[] { 1, 2 }));
-            Assert.That(counts2, Is.EquivalentTo(new[] { 3, 4 }));
+            Assert.That(counts1, Is.EquivalentTo(new long[] { 1, 2 }));
+            Assert.That(counts2, Is.EquivalentTo(new long[] { 3, 4 }));
         }
 
         [Test]
@@ -125,7 +125,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
             var counts = monitor.GetEnqueuedJobIds(options.Queues[0], 58, 2);
 
             // Assert/
-            Assert.That(counts, Is.EquivalentTo(new[] { 58, 59 }));
+            Assert.That(counts, Is.EquivalentTo(new long[] { 58, 59 }));
         }
     }
 }
