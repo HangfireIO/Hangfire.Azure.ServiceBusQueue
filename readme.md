@@ -19,6 +19,11 @@ Hangfire.Azure.ServiceBusQueue is available as a NuGet package. Install it using
 PM> Install-Package Hangfire.Azure.ServiceBusQueue
 ```
 
+Compatibility
+-------------
+
+Hangfire v1.7+ introduced breaking changes to the SQL Server integration points and requires at least version 4.0.0 of this library. If you are on an older version of Hangfire please use a lower version of Hangfire.Azure.ServiceBusQueue
+
 Usage
 ------
 
