@@ -10,16 +10,18 @@ namespace Hangfire.Azure.ServiceBusQueue
     internal class ServiceBusQueueFetchedJob : IFetchedJob
     {
         private readonly BrokeredMessage _message;
+        private readonly TimeSpan? _lockRenewalDelay;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         private bool _completed;
         private bool _disposed;
 
-        public ServiceBusQueueFetchedJob(BrokeredMessage message)
+        public ServiceBusQueueFetchedJob(BrokeredMessage message, TimeSpan? lockRenewalDelay)
         {
             if (message == null) throw new ArgumentNullException("message");
 
             _message = message;
+            _lockRenewalDelay = lockRenewalDelay;
             _cancellationTokenSource = new CancellationTokenSource();
 
             JobId = _message.GetBody<string>();
@@ -66,11 +68,16 @@ namespace Hangfire.Azure.ServiceBusQueue
             {
                 while (!_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    // We wait until a second before the lock is due to expire to give us
-                    // plenty of time to wake up and communicate with queue to renew the
-                    // lock of this message before expiration.
-                    var toWait = _message.LockedUntilUtc - DateTime.UtcNow - TimeSpan.FromSeconds(1);
-
+                    // Previously we were waiting until a second before the lock is due
+                    // to expire to give us plenty of time to wake up and communicate
+                    // with queue to renew the lock of this message before expiration.
+                    // However since clocks may be non-synchronized well, for long-running
+                    // background jobs it's better to have more renewal attempts than a
+                    // lock that's expired too early.
+                    var toWait = _lockRenewalDelay.HasValue
+                        ? _lockRenewalDelay.Value
+                        : _message.LockedUntilUtc - DateTime.UtcNow - TimeSpan.FromSeconds(1);
+                    
                     await Task.Delay(toWait, _cancellationTokenSource.Token);
 
                     // Double check we have not been cancelled to avoid renewing a lock

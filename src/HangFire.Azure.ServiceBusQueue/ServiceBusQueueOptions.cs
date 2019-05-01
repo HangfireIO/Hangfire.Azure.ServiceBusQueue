@@ -35,6 +35,13 @@ namespace Hangfire.Azure.ServiceBusQueue
         /// requested.
         /// </remarks>
         public bool CheckAndCreateQueues { get; set; }
+        
+        /// <summary>
+        /// Gets or sets a delay between calls to the <see cref="BrokeredMessage.RenewLock"/> method
+        /// to disallow workers to pick up the same background job several time while it's still
+        /// processing on an active server.
+        /// </summary>
+        public TimeSpan? LockRenewalDelay { get; set; }
 
         public string ConnectionString { get; set; }
 
