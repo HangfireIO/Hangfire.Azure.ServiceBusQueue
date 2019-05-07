@@ -93,7 +93,7 @@ namespace Hangfire.Azure.ServiceBusQueue
                         catch (Exception ex)
                         {
                             _logger.DebugException(
-                                $"An exception was thrown while trying to renew a lock for job '{JobId}'.",
+                                String.Format("An exception was thrown while trying to renew a lock for job '{0}'.", JobId),
                                 ex);
                         }
                     }
