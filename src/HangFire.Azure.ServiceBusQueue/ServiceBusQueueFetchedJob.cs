@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Hangfire.Logging;
 using Hangfire.Storage;
 using Microsoft.ServiceBus.Messaging;
 
@@ -9,6 +10,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueFetchedJob : IFetchedJob
     {
+        private readonly ILog _logger = LogProvider.GetLogger(typeof(ServiceBusQueueFetchedJob));
         private readonly BrokeredMessage _message;
         private readonly TimeSpan? _lockRenewalDelay;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -84,7 +86,16 @@ namespace Hangfire.Azure.ServiceBusQueue
                     // unnecessarily
                     if (!_cancellationTokenSource.Token.IsCancellationRequested)
                     {
-                        _message.RenewLock();
+                        try
+                        {
+                            _message.RenewLock();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.DebugException(
+                                $"An exception was thrown while trying to renew a lock for job '{JobId}'.",
+                                ex);
+                        }
                     }
                 }
             }, _cancellationTokenSource.Token);
