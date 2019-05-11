@@ -14,12 +14,15 @@ namespace Hangfire.Azure.ServiceBusQueue
         private static readonly TimeSpan MinSyncReceiveTimeout = TimeSpan.FromTicks(1);
 
         private readonly ServiceBusManager _manager;
+        private readonly ServiceBusQueueOptions _options;
 
-        public ServiceBusQueueJobQueue(ServiceBusManager manager)
+        public ServiceBusQueueJobQueue(ServiceBusManager manager, ServiceBusQueueOptions options)
         {
             if (manager == null) throw new ArgumentNullException("manager");
+            if (options == null) throw new ArgumentNullException("options");
 
             _manager = manager;
+            _options = options;
         }
 
         public IFetchedJob Dequeue(string[] queues, CancellationToken cancellationToken)
@@ -60,7 +63,7 @@ namespace Hangfire.Azure.ServiceBusQueue
                 queueIndex = (queueIndex + 1) % queues.Length;
             } while (message == null);
 
-            return new ServiceBusQueueFetchedJob(message);
+            return new ServiceBusQueueFetchedJob(message, _options.LockRenewalDelay);
         }
 
         public void Enqueue(IDbConnection connection, string queue, string jobId)

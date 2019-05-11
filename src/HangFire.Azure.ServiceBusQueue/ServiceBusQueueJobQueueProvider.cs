@@ -25,7 +25,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 
             var manager = new ServiceBusManager(options);
 
-            _jobQueue = new ServiceBusQueueJobQueue(manager);
+            _jobQueue = new ServiceBusQueueJobQueue(manager, options);
             _monitoringApi = new ServiceBusQueueMonitoringApi(manager, options.Queues);
         }
 
