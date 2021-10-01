@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Xml;
+using Azure.Messaging.ServiceBus.Administration;
 using Hangfire.Azure.ServiceBusQueue;
 using Hangfire.SqlServer;
-using Microsoft.ServiceBus;
+using Hangfire.Storage;
 using NUnit.Framework;
 
 namespace HangFire.Azure.ServiceBusQueue.Tests
@@ -23,13 +26,13 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         }
 
         [TearDown]
-        public void DeleteQueues()
+        public async Task DeleteQueues()
         {
-            var manager = NamespaceManager.CreateFromConnectionString(options.ConnectionString);
+            var manager = new ServiceBusAdministrationClient(options.ConnectionString);
 
             foreach (var queueName in options.Queues)
             {
-                manager.DeleteQueue(options.QueuePrefix + queueName);
+                await manager.DeleteQueueAsync(options.QueuePrefix + queueName);
             }
         }
 
@@ -60,7 +63,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         public void Dequeue_ShouldFetchJobs_OnlyFromSpecifiedQueues()
         {
             // Arrange
-            queue.Enqueue(null, options.Queues[0], "1");
+            queue.Enqueue(null, null, options.Queues[0], "1");
 
             // Act / Assert
             Assert.Throws<OperationCanceledException>(
@@ -73,27 +76,54 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         public void Dequeue_ShouldFetchJobs_FromMultipleQueues()
         {
             // Arrange
-            queue.Enqueue(null, options.Queues[0], "1");
-            queue.Enqueue(null, options.Queues[1], "2");
+            queue.Enqueue(null, null, options.Queues[0], "1");
+            queue.Enqueue(null, null, options.Queues[1], "2");
 
             // Act / Assert
             var job1 = queue.Dequeue(
-                    options.Queues,
-                    CreateTimingOutCancellationToken());
+                options.Queues,
+                CreateTimingOutCancellationToken());
 
             var job2 = queue.Dequeue(
-                    options.Queues,
-                    CreateTimingOutCancellationToken());
+                options.Queues,
+                CreateTimingOutCancellationToken());
 
             Assert.That(job1.JobId, Is.EqualTo("1"));
             Assert.That(job2.JobId, Is.EqualTo("2"));
         }
 
         [Test]
+        public void Dequeue_ShouldFetchJobs_In_Multithread()
+        {
+            // Arrange
+            queue.Enqueue(null, null, options.Queues[0], "1");
+            queue.Enqueue(null, null, options.Queues[0], "2");
+            queue.Enqueue(null, null, options.Queues[0], "3");
+            queue.Enqueue(null, null, options.Queues[0], "4");
+
+            var task1 = Task.Run(() => queue.Dequeue(options.Queues, CreateTimingOutCancellationToken()));
+            var task2 = Task.Run(() => queue.Dequeue(options.Queues, CreateTimingOutCancellationToken()));
+            var task3 = Task.Run(() => queue.Dequeue(options.Queues, CreateTimingOutCancellationToken()));
+            var task4 = Task.Run(() => queue.Dequeue(options.Queues, CreateTimingOutCancellationToken()));
+
+            IFetchedJob[] job = Task.WhenAll(task1, task2, task3, task4).GetAwaiter().GetResult();
+
+            Assert.That(job[0].JobId, Is.AnyOf("1", "2", "3", "4"));
+            Assert.That(job[1].JobId, Is.AnyOf("1", "2", "3", "4"));
+            Assert.That(job[2].JobId, Is.AnyOf("1", "2", "3", "4"));
+            Assert.That(job[3].JobId, Is.AnyOf("1", "2", "3", "4"));
+
+            Assert.That(job[0].JobId, !Is.AnyOf(job[1].JobId, job[2].JobId, job[3].JobId));
+            Assert.That(job[1].JobId, !Is.AnyOf(job[0].JobId, job[2].JobId, job[3].JobId));
+            Assert.That(job[2].JobId, !Is.AnyOf(job[0].JobId, job[1].JobId, job[3].JobId));
+            Assert.That(job[3].JobId, !Is.AnyOf(job[0].JobId, job[1].JobId, job[2].JobId));
+        }
+
+        [Test]
         public void Dequeue_ShouldFetchAJob_FromTheSpecifiedQueue()
         {
             // Arrange
-            queue.Enqueue(null, options.Queues[0], "1");
+            queue.Enqueue(null, null, options.Queues[0], "1");
 
             // Act / Assert
             var job = queue.Dequeue(options.Queues, CreateTimingOutCancellationToken());
@@ -105,7 +135,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         public void Dequeue_Complete_Should_RemoveFromQueue()
         {
             // Arrange
-            queue.Enqueue(null, options.Queues[0], "1");
+            queue.Enqueue(null, null, options.Queues[0], "1");
 
             // Act
             var job = queue.Dequeue(options.Queues, CreateTimingOutCancellationToken());
@@ -121,7 +151,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         public void Dequeue_Requeue_ShouldAddBackToQueue()
         {
             // Arrange
-            queue.Enqueue(null, options.Queues[0], "1");
+            queue.Enqueue(null, null, options.Queues[0], "1");
 
             // Act
             var job = queue.Dequeue(options.Queues, CreateTimingOutCancellationToken());
@@ -145,7 +175,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
             // Arrange
             SetUpQueue(TimeSpan.FromMilliseconds(lockTimeMs));
 
-            queue.Enqueue(null, options.Queues[0], "1");
+            queue.Enqueue(null, null, options.Queues[0], "1");
 
             // Act
             var job = queue.Dequeue(options.Queues, CreateTimingOutCancellationToken());
@@ -174,7 +204,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
 
             provider = new ServiceBusQueueJobQueueProvider(options);
 
-            queue = provider.GetJobQueue();
+            queue   = provider.GetJobQueue();
             monitor = provider.GetJobQueueMonitoringApi();
         }
     }

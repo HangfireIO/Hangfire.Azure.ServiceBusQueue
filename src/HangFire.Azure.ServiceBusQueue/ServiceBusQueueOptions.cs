@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.ServiceBus.Messaging;
+using Azure.Messaging.ServiceBus.Administration;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
@@ -7,9 +7,22 @@ namespace Hangfire.Azure.ServiceBusQueue
     {
         public ServiceBusQueueOptions()
         {
-            this.CheckAndCreateQueues = true;
-            this.LoopReceiveTimeout = TimeSpan.FromMilliseconds(500);
-            this.RetryPolicy = new LinearRetryPolicy(3, TimeSpan.FromSeconds(1));
+            QueuePollInterval    = TimeSpan.FromSeconds(15);
+            CheckAndCreateQueues = true;
+            LoopReceiveTimeout   = TimeSpan.FromMilliseconds(500);
+            RetryPolicy          = new LinearRetryPolicy(3, TimeSpan.FromSeconds(1));
+        }
+
+        private TimeSpan _queuePollInterval;
+
+        public TimeSpan QueuePollInterval
+        {
+            get => _queuePollInterval;
+            set
+            {
+                var message = $"The QueuePollInterval property value should be positive. Given: {value}.";
+                _queuePollInterval = !(value != value.Duration()) ? value : throw new ArgumentException(message, nameof(value));
+            }
         }
 
         /// <summary>
@@ -23,7 +36,7 @@ namespace Hangfire.Azure.ServiceBusQueue
         /// Configures a queue on construction, for example setting maximum message
         /// size or default TTL.
         /// </summary>
-        public Action<QueueDescription> Configure { get; set; }
+        public Action<CreateQueueOptions> Configure { get; set; }
 
         /// <summary>
         /// Gets or sets a value which indicates whether or not to automatically create and
@@ -35,7 +48,7 @@ namespace Hangfire.Azure.ServiceBusQueue
         /// requested.
         /// </remarks>
         public bool CheckAndCreateQueues { get; set; }
-        
+
         /// <summary>
         /// Gets or sets a delay between calls to the <see cref="BrokeredMessage.RenewLock"/> method
         /// to disallow workers to pick up the same background job several time while it's still
@@ -97,7 +110,8 @@ namespace Hangfire.Azure.ServiceBusQueue
                 throw new InvalidOperationException("Must supply Queues to ServiceBusQueueOptions");
 
             if (Queues.Length == 0)
-                throw new InvalidOperationException("Must supply at least one queue in Queues property of ServiceBusQueueOptions");
+                throw new InvalidOperationException(
+                    "Must supply at least one queue in Queues property of ServiceBusQueueOptions");
         }
     }
 }
