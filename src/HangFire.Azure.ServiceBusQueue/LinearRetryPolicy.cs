@@ -1,40 +1,63 @@
 ﻿using System;
-using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
     public class LinearRetryPolicy : IRetryPolicy
     {
+        private readonly List<TimeSpan> _retryDelays = new List<TimeSpan>();
+
         public LinearRetryPolicy(int retryCount, TimeSpan retryDelay)
         {
-            this.RetryDelay = retryDelay;
-            this.RetryCount = retryCount;
+            if (retryCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(retryCount));
+
+            if (retryDelay <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(retryCount));
+
+            for (var i = 0; i < retryCount; i++)
+            {
+                _retryDelays.Add(retryDelay);
+            }
         }
 
-        public TimeSpan RetryDelay { get; private set; }
-
-        public int RetryCount { get; private set; }
-
-        public void Execute(Action action)
+        public LinearRetryPolicy(IEnumerable<TimeSpan> retryDelay)
         {
-            for (var i = 0; i < this.RetryCount; i++)
+            if (retryDelay == null)
+                throw new ArgumentNullException(nameof(retryDelay));
+
+            var timeSpans = retryDelay.ToList();
+            if (!timeSpans.Any() || timeSpans.Any(x=>x <= TimeSpan.Zero))
+                throw new ArgumentOutOfRangeException(nameof(retryDelay));
+
+            _retryDelays = timeSpans.ToList();
+        }
+
+        public async Task Execute(Func<Task> action)
+        {
+            var exceptions = new List<Exception>();
+
+            var attempt = 0;
+            foreach (var retryDelay in _retryDelays)
             {
+                attempt++;
                 try
                 {
-                    action();
+                    if (attempt > 1)
+                        await Task.Delay(retryDelay).ConfigureAwait(false);
+
+                    await action().ConfigureAwait(false);
 
                     return;
                 }
-                catch (TimeoutException)
+                catch (Exception ex)
                 {
-                    if (i == this.RetryCount - 1)
-                    {
-                        throw;
-                    }
-
-                    Thread.Sleep(this.RetryDelay);
+                    exceptions.Add(ex);
                 }
             }
+            throw new AggregateException(exceptions);
         }
     }
 }
