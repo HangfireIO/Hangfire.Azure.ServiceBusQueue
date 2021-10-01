@@ -14,7 +14,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 
         public ServiceBusQueueJobQueueProvider(ServiceBusQueueOptions options)
         {
-            if (options == null) throw new ArgumentNullException("options");
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             options.Validate();
 
@@ -25,7 +25,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 
             var manager = new ServiceBusManager(options);
 
-            _jobQueue = new ServiceBusQueueJobQueue(manager, options);
+            _jobQueue      = new ServiceBusQueueJobQueue(manager, options);
             _monitoringApi = new ServiceBusQueueMonitoringApi(manager, options.Queues);
         }
 

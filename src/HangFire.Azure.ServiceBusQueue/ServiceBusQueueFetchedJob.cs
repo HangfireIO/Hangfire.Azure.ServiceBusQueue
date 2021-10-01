@@ -1,66 +1,91 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Hangfire.Logging;
 using Hangfire.Storage;
-using Microsoft.ServiceBus.Messaging;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueFetchedJob : IFetchedJob
     {
-        private readonly ILog _logger = LogProvider.GetLogger(typeof(ServiceBusQueueFetchedJob));
-        private readonly BrokeredMessage _message;
+        private readonly ILog _logger = LogProvider.GetCurrentClassLogger();
+        private readonly ServiceBusReceiver _client;
         private readonly TimeSpan? _lockRenewalDelay;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly ServiceBusReceivedMessage _message;
 
         private bool _completed;
         private bool _disposed;
 
-        public ServiceBusQueueFetchedJob(BrokeredMessage message, TimeSpan? lockRenewalDelay)
+        public ServiceBusQueueFetchedJob(ServiceBusReceiver client, ServiceBusReceivedMessage message, TimeSpan? lockRenewalDelay)
         {
-            if (message == null) throw new ArgumentNullException("message");
-
-            _message = message;
+            _message = message ?? throw new ArgumentNullException(nameof(message));
+            _client = client;
             _lockRenewalDelay = lockRenewalDelay;
             _cancellationTokenSource = new CancellationTokenSource();
 
-            JobId = _message.GetBody<string>();
+            JobId    = message.Body.ToString();
 
             KeepAlive();
         }
 
-        public string JobId { get; private set; }
-
-        public BrokeredMessage Message { get { return this._message; } }
+        public string JobId { get; }
+        public ServiceBusReceivedMessage Message => _message;
 
         public void Requeue()
         {
             _cancellationTokenSource.Cancel();
 
-            _message.Abandon();
-            _completed = true;
+            try
+            {
+                AsyncHelper.RunSync(() => _client.AbandonMessageAsync(_message));
+                _completed = true;
+            }
+            catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessageNotFound)
+            {
+                _logger.Warn($"Message with token '{_message.LockToken}' not found in service bus.");
+            }
+            catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessageLockLost)
+            {
+            }
         }
 
         public void RemoveFromQueue()
         {
             _cancellationTokenSource.Cancel();
 
-            _message.Complete();
-            _completed = true;
+            try
+            {
+                AsyncHelper.RunSync(() => _client.CompleteMessageAsync(_message));
+                _completed = true;
+            }
+            catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessageNotFound)
+            {
+                _logger.Warn($"Message with token '{_message.LockToken}' not found in service bus.");
+            }
+            catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessageLockLost)
+            {
+            }
         }
 
         public void Dispose()
         {
             _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Dispose();
 
-            if (!_completed && !_disposed)
+            try
             {
-                _message.Abandon();
+                if (!_completed && !_disposed)
+                {
+                    AsyncHelper.RunSync(() => _client.AbandonMessageAsync(_message));
+                }
+            }
+            catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessageNotFound
+                                                 || ex.Reason == ServiceBusFailureReason.MessageLockLost)
+            {
             }
 
-            _message.Dispose();
             _disposed = true;
         }
 
@@ -76,26 +101,28 @@ namespace Hangfire.Azure.ServiceBusQueue
                     // However since clocks may be non-synchronized well, for long-running
                     // background jobs it's better to have more renewal attempts than a
                     // lock that's expired too early.
-                    var toWait = _lockRenewalDelay.HasValue
-                        ? _lockRenewalDelay.Value
-                        : _message.LockedUntilUtc - DateTime.UtcNow - TimeSpan.FromSeconds(1);
-                    
-                    await Task.Delay(toWait, _cancellationTokenSource.Token);
+                    var toWait = _lockRenewalDelay ??
+                                 _message.LockedUntil - DateTime.UtcNow - TimeSpan.FromSeconds(1);
+
+                    await Task.Delay(toWait, _cancellationTokenSource.Token).ConfigureAwait(false);
 
                     // Double check we have not been cancelled to avoid renewing a lock
                     // unnecessarily
-                    if (!_cancellationTokenSource.Token.IsCancellationRequested)
+                    if (_cancellationTokenSource.Token.IsCancellationRequested) continue;
+
+                    try
                     {
-                        try
-                        {
-                            _message.RenewLock();
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.DebugException(
-                                String.Format("An exception was thrown while trying to renew a lock for job '{0}'.", JobId),
-                                ex);
-                        }
+                        await _client.RenewMessageLockAsync(_message).ConfigureAwait(false);
+                    }
+                    catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessageNotFound
+                                                         || ex.Reason == ServiceBusFailureReason.MessageLockLost)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.DebugException(
+                            $"An exception was thrown while trying to renew a lock for job '{JobId}'.", ex);
                     }
                 }
             }, _cancellationTokenSource.Token);

@@ -1,111 +1,130 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.ServiceBus;
-using Microsoft.ServiceBus.Messaging;
 using Hangfire.Logging;
+using System.Threading.Tasks;
+using Azure;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusManager
     {
-        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
+        private readonly ILog _logger = LogProvider.GetCurrentClassLogger();
 
         // Stores the pre-created QueueClients (note the key is the unprefixed queue name)
-        private readonly Dictionary<string, QueueClient> _clients;
+        private readonly Dictionary<string, ServiceBusSender> _senders;
+        private readonly Dictionary<string, ServiceBusReceiver> _receivers;
 
-        private readonly ServiceBusQueueOptions _options;
-        private readonly NamespaceManager _namespaceManager;
-        private readonly MessagingFactory _messagingFactory;
+        private readonly ServiceBusAdministrationClient _managementAdminClient;
+        private readonly ServiceBusClient _managementClient;
 
         public ServiceBusManager(ServiceBusQueueOptions options)
         {
-            if (options == null) throw new ArgumentNullException("options");
+            Options = options ?? throw new ArgumentNullException(nameof(options));
 
-            _options = options;
+            _senders               = new Dictionary<string, ServiceBusSender>(options.Queues.Length);
+            _receivers             = new Dictionary<string, ServiceBusReceiver>(options.Queues.Length);
+            _managementClient      = new ServiceBusClient(options.ConnectionString);
+            _managementAdminClient = new ServiceBusAdministrationClient(options.ConnectionString);
 
-            _clients = new Dictionary<string, QueueClient>(options.Queues.Length);
-            _namespaceManager = NamespaceManager.CreateFromConnectionString(options.ConnectionString);
-            _messagingFactory = MessagingFactory.CreateFromConnectionString(options.ConnectionString);
-
-            // If we have this option set to true then we will create all clients up-front, otherwise
-            // the creation will be delayed until the first client is retrieved
             if (options.CheckAndCreateQueues)
             {
-                CreateQueueClients();
+                AsyncHelper.RunSync(CreateQueueClients);
             }
         }
 
-        public ServiceBusQueueOptions Options { get { return _options; } }
-
-        public QueueClient GetClient(string queue)
+        ~ServiceBusManager()
         {
-            if (_clients.Count != _options.Queues.Length)
+            foreach (var sender in _senders)
             {
-                CreateQueueClients();
+                AsyncHelper.RunSync(() => sender.Value.CloseAsync());
+            }
+            foreach (var receiver in _receivers)
+            {
+                AsyncHelper.RunSync(() => receiver.Value.CloseAsync());
+            }
+            _managementClient.DisposeAsync();
+        }
+
+        public ServiceBusQueueOptions Options { get; }
+
+        public async Task<ServiceBusSender> GetSenderAsync(string queue)
+        {
+            if (_senders.Count != Options.Queues.Length)
+            {
+                await CreateQueueClients().ConfigureAwait(false);
+            }
+            return _senders[queue];
+        }
+
+        public async Task<ServiceBusReceiver> GetReceiverAsync(string queue)
+        {
+            if (_receivers.Count != Options.Queues.Length)
+            {
+                await CreateQueueClients().ConfigureAwait(false);
             }
 
-            return _clients[queue];
+            return _receivers[queue];
         }
 
-        public QueueDescription GetDescription(string queue)
+        public async Task<Response<QueueRuntimeProperties>> GetQueueRuntimeInfoAsync(string queue)
         {
-            return _namespaceManager.GetQueue(_options.GetQueueName(queue));
+            return await _managementAdminClient.GetQueueRuntimePropertiesAsync(Options.GetQueueName(queue));
         }
 
-        private void CreateQueueClients()
+        private async Task CreateQueueClients()
         {
-            foreach (var queue in _options.Queues)
+            _logger.Warn("crea code main");
+            foreach (var queue in Options.Queues)
             {
-                var prefixedQueue = _options.GetQueueName(queue);
+                var prefixedQueue = Options.GetQueueName(queue);
 
-                CreateQueueIfNotExists(prefixedQueue, _namespaceManager, _options);
+                await CreateQueueIfNotExistsAsync(prefixedQueue).ConfigureAwait(false);
 
-                Logger.TraceFormat("Creating new QueueClient for queue {0}", prefixedQueue);
+                _logger.TraceFormat("Creating new Senders and Receivers for queue {0}", prefixedQueue);
 
-                // Do not store as prefixed queue to avoid having to re-create name in GetClient method
-                _clients[queue] = this._messagingFactory.CreateQueueClient(prefixedQueue, ReceiveMode.PeekLock);
+                if (!_senders.ContainsKey(queue))
+                    _senders.Add(queue, _managementClient.CreateSender(prefixedQueue));
+
+                if (!_receivers.ContainsKey(queue))
+                    _receivers.Add(queue, _managementClient.CreateReceiver(prefixedQueue));
             }
         }
 
-        private static void CreateQueueIfNotExists(string prefixedQueue, NamespaceManager namespaceManager, ServiceBusQueueOptions options)
+        private async Task CreateQueueIfNotExistsAsync(string prefixedQueue)
         {
-            if (options.CheckAndCreateQueues == false)
+            if (Options.CheckAndCreateQueues == false)
             {
-                Logger.InfoFormat("Not checking for the existence of the queue {0}", prefixedQueue);
-
+                _logger.InfoFormat("Not checking for the existence of the queue {0}", prefixedQueue);
                 return;
             }
-
             try
             {
-                Logger.InfoFormat("Checking if queue {0} exists", prefixedQueue);
+                _logger.InfoFormat("Checking if queue {0} exists", prefixedQueue);
 
-                if (namespaceManager.QueueExists(prefixedQueue))
+                if (await _managementAdminClient.QueueExistsAsync(prefixedQueue).ConfigureAwait(false))
                 {
                     return;
                 }
 
-                Logger.InfoFormat("Creating new queue {0}", prefixedQueue);
+                _logger.InfoFormat("Creating new queue {0}", prefixedQueue);
 
-                var description = new QueueDescription(prefixedQueue);
-                if (options.RequiresDuplicateDetection != null)
+                var queueOptions = new CreateQueueOptions(prefixedQueue);
+                if (Options.RequiresDuplicateDetection != null)
                 {
-                    description.RequiresDuplicateDetection = options.RequiresDuplicateDetection.Value;
+                    queueOptions.RequiresDuplicateDetection = Options.RequiresDuplicateDetection.Value;
                 }
 
-                if (options.Configure != null)
-                {
-                    options.Configure(description);
-                }
+                Options.Configure?.Invoke(queueOptions);
 
-                namespaceManager.CreateQueue(description);
+                await _managementAdminClient.CreateQueueAsync(queueOptions).ConfigureAwait(false);
             }
             catch (UnauthorizedAccessException ex)
             {
-                var errorMessage = string.Format(
-                    "Queue '{0}' could not be checked / created, likely due to missing the 'Manage' permission. " +
-                    "You must either grant the 'Manage' permission, or set ServiceBusQueueOptions.CheckAndCreateQueues to false",
-                    prefixedQueue);
+                var errorMessage =
+                    $"Queue '{prefixedQueue}' could not be checked / created, likely due to missing the 'Manage' permission. " +
+                    "You must either grant the 'Manage' permission, or set ServiceBusQueueOptions.CheckAndCreateQueues to false";
 
                 throw new UnauthorizedAccessException(errorMessage, ex);
             }

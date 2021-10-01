@@ -1,7 +1,8 @@
 ﻿using System;
+using Azure.Messaging.ServiceBus.Administration;
+using Hangfire.Annotations;
 using Hangfire.SqlServer;
 using Hangfire.States;
-using Microsoft.ServiceBus.Messaging;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
@@ -14,7 +15,7 @@ namespace Hangfire.Azure.ServiceBusQueue
             return UseServiceBusQueues(storage, new ServiceBusQueueOptions
             {
                 ConnectionString = connectionString,
-                Queues = new[] { EnqueuedState.DefaultQueue }
+                Queues           = new[] { EnqueuedState.DefaultQueue }
             });
         }
 
@@ -26,21 +27,21 @@ namespace Hangfire.Azure.ServiceBusQueue
             return UseServiceBusQueues(storage, new ServiceBusQueueOptions
             {
                 ConnectionString = connectionString,
-                Queues = queues
+                Queues           = queues
             });
         }
 
         public static SqlServerStorage UseServiceBusQueues(
             this SqlServerStorage storage,
             string connectionString,
-            Action<QueueDescription> configureAction,
+            Action<CreateQueueOptions> configureAction,
             params string[] queues)
         {
             return UseServiceBusQueues(storage, new ServiceBusQueueOptions
             {
                 ConnectionString = connectionString,
-                Configure = configureAction,
-                Queues = queues
+                Configure        = configureAction,
+                Queues           = queues
             });
         }
 
@@ -48,8 +49,8 @@ namespace Hangfire.Azure.ServiceBusQueue
             this SqlServerStorage storage,
             ServiceBusQueueOptions options)
         {
-            if (storage == null) throw new ArgumentNullException("storage");
-            if (options == null) throw new ArgumentNullException("options");
+            if (storage == null) throw new ArgumentNullException(nameof(storage));
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             var provider = new ServiceBusQueueJobQueueProvider(options);
 

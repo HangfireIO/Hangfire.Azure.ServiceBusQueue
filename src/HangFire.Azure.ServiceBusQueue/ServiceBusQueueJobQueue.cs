@@ -4,82 +4,93 @@ using System.Threading;
 using System.Transactions;
 using Hangfire.SqlServer;
 using Hangfire.Storage;
-using Microsoft.ServiceBus.Messaging;
-using System.Data;
+using System.Threading.Tasks;
+using System.Data.Common;
+using Azure.Messaging.ServiceBus;
+using Hangfire.Logging;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
     internal class ServiceBusQueueJobQueue : IPersistentJobQueue
     {
-        private static readonly TimeSpan MinSyncReceiveTimeout = TimeSpan.FromTicks(1);
-
         private readonly ServiceBusManager _manager;
         private readonly ServiceBusQueueOptions _options;
+        private readonly ILog _logger = LogProvider.GetCurrentClassLogger();
 
         public ServiceBusQueueJobQueue(ServiceBusManager manager, ServiceBusQueueOptions options)
         {
-            if (manager == null) throw new ArgumentNullException("manager");
-            if (options == null) throw new ArgumentNullException("options");
-
-            _manager = manager;
-            _options = options;
+            _manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         public IFetchedJob Dequeue(string[] queues, CancellationToken cancellationToken)
         {
-            BrokeredMessage message = null;
-            var queueIndex = 0;
+            if (queues == null)
+                throw new ArgumentNullException(nameof(queues));
 
-            var clients = queues
-                .Select(queue => _manager.GetClient(queue))
-                .ToArray();
+            if (queues.Length == 0)
+                throw new ArgumentException("Queue array must not be empty.", nameof(queues));
 
-            do
+            return Task.Run(async () =>
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                var queueIndex = 0;
+                var receivers = await Task.WhenAll(queues.Select(queue => _manager.GetReceiverAsync(queue))).ConfigureAwait(false);
 
-                try
+                do
                 {
-                    var client = clients[queueIndex];
-                    var isLastQueue = queueIndex == queues.Length - 1;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var busReceiver = receivers[queueIndex];
 
-                    message = isLastQueue
-                        ? client.Receive(_manager.Options.LoopReceiveTimeout) // Last queue
-                        : client.Receive(MinSyncReceiveTimeout);
-                }
-                catch (TimeoutException)
-                {
-                }
-                catch (MessagingEntityNotFoundException ex)
-                {
-                    var errorMessage = string.Format(
-                        "Queue {0} could not be found. Either create the queue manually, " +
-                        "or grant the Manage permission and set ServiceBusQueueOptions.CheckAndCreateQueues to true",
-                        clients[queueIndex].Path);
+                    try
+                    {
+                        var message = await busReceiver.ReceiveMessageAsync(_manager.Options.LoopReceiveTimeout)
+                                                       .ConfigureAwait(false);
 
-                    throw new UnauthorizedAccessException(errorMessage, ex);
-                }
+                        if (message != null)
+                        {
+                            _logger.Info(
+                                $"{DateTime.Now} - Dequeue one message from queue {busReceiver.EntityPath} with body {message.Body}");
+                            return new ServiceBusQueueFetchedJob(busReceiver, message, _options.LockRenewalDelay);
+                        }
+                    }
+                    catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.ServiceTimeout)
+                    {
+                        _logger.Warn("Servicebus timeout dequeuing one message from queue {busReceiver.EntityPath}");
+                    }
+                    catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
+                    {
+                        var errorMessage =
+                            $"Queue {busReceiver.EntityPath} could not be found. Either create the queue manually, " +
+                            "or grant the Manage permission and set ServiceBusQueueOptions.CheckAndCreateQueues to true";
 
-                queueIndex = (queueIndex + 1) % queues.Length;
-            } while (message == null);
+                        throw new UnauthorizedAccessException(errorMessage, ex);
+                    }
 
-            return new ServiceBusQueueFetchedJob(message, _options.LockRenewalDelay);
+                    queueIndex = (queueIndex + 1) % queues.Length;
+
+                    await Task.Delay(_options.QueuePollInterval).ConfigureAwait(false);
+                } while (true);
+            }).GetAwaiter().GetResult();
         }
 
-        public void Enqueue(IDbConnection connection, string queue, string jobId)
+        public void Enqueue(DbConnection connection, DbTransaction transaction, string queue, string jobId)
         {
             // Because we are within a TransactionScope at this point the below
             // call would not work (Local transactions are not supported with other resource managers/DTC
             // exception is thrown) without suppression
             using (new TransactionScope(TransactionScopeOption.Suppress))
             {
-                var client = _manager.GetClient(queue);
-
-                using (var message = new BrokeredMessage(jobId) { MessageId = jobId })
-                {
-                    _manager.Options.RetryPolicy.Execute(() => client.Send(message));
-                }
+                AsyncHelper.RunSync(() => DoEnqueueAsync(queue, jobId));
             }
+        }
+
+        private async Task DoEnqueueAsync(string queue, string jobId)
+        {
+            var sender = await _manager.GetSenderAsync(queue).ConfigureAwait(false);
+
+            var message = new ServiceBusMessage(jobId) { MessageId = jobId };
+            await _manager.Options.RetryPolicy.Execute(() => sender.SendMessageAsync(message)).ConfigureAwait(false);
+            _logger.Info($"{DateTime.Now} - Enqueue one message to queue {sender.EntityPath} with body {jobId}");
         }
     }
 }

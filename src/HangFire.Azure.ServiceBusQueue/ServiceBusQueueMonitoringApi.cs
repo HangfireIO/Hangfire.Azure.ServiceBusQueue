@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Hangfire.SqlServer;
 
 namespace Hangfire.Azure.ServiceBusQueue
@@ -12,11 +13,8 @@ namespace Hangfire.Azure.ServiceBusQueue
 
         public ServiceBusQueueMonitoringApi(ServiceBusManager manager, string[] queues)
         {
-            if (manager == null) throw new ArgumentNullException("manager");
-            if (queues == null) throw new ArgumentNullException("queues");
-
-            _manager = manager;
-            _queues = queues;
+            _manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            _queues  = queues ?? throw new ArgumentNullException(nameof(queues));
         }
 
         public IEnumerable<string> GetQueues()
@@ -24,47 +22,49 @@ namespace Hangfire.Azure.ServiceBusQueue
             return _queues;
         }
 
-        public IEnumerable<long> GetEnqueuedJobIds(string queue, int @from, int perPage)
+        public IEnumerable<long> GetEnqueuedJobIds(string queue, int from, int perPage)
         {
-            var client = _manager.GetClient(queue);
+            return AsyncHelper.RunSync(() => GetEnqueuedJobIdsAsync(queue, from, perPage));
+        }
+
+        private async Task<IEnumerable<long>> GetEnqueuedJobIdsAsync(string queue, int from, int perPage)
+        {
+            var receiver = await _manager.GetReceiverAsync(queue).ConfigureAwait(false);
+
             var jobIds = new List<long>();
 
-            // We have to overfetch to retrieve enough messages for paging.
-            // e.g. @from = 10 and page size = 20 we need 30 messages from the start
-            var messages = client.PeekBatch(0, @from + perPage).ToArray();
-            
-            // We could use LINQ here but to avoid creating lots of garbage lists
-            // through .Skip / .ToList etc. use a simple loop.
-            for (var i = 0; i < messages.Length; i++)
+            // Hangfire api require a 0 based index for @from, but PeekMessageAsync is 1 based
+            var messages = await receiver.PeekMessagesAsync(perPage, from + 1).ConfigureAwait(false);
+
+            foreach (var msg in messages)
             {
-                var msg = messages[i];
-
-                // Only include the job id once we have skipped past the @from
-                // number
-                if (i >= @from)
+                if (long.TryParse(msg.Body.ToString(), out var longJobId))
                 {
-                    jobIds.Add(long.Parse(msg.GetBody<string>()));
+                    jobIds.Add(longJobId);
                 }
-
-                msg.Dispose();
             }
 
             return jobIds;
         }
 
-        public IEnumerable<long> GetFetchedJobIds(string queue, int @from, int perPage)
+        public IEnumerable<long> GetFetchedJobIds(string queue, int from, int perPage)
         {
             return Enumerable.Empty<long>();
         }
 
         public EnqueuedAndFetchedCountDto GetEnqueuedAndFetchedCount(string queue)
         {
-            var queueDescriptor = _manager.GetDescription(queue);
+            return AsyncHelper.RunSync(() => GetEnqueuedAndFetchedCountAsync(queue));
+        }
+
+        private async Task<EnqueuedAndFetchedCountDto> GetEnqueuedAndFetchedCountAsync(string queue)
+        {
+            var queueRuntimeInfo = await _manager.GetQueueRuntimeInfoAsync(queue).ConfigureAwait(false);
 
             return new EnqueuedAndFetchedCountDto
             {
-                EnqueuedCount = (int) queueDescriptor.MessageCountDetails.ActiveMessageCount,
-                FetchedCount = null
+                EnqueuedCount = (int)queueRuntimeInfo.Value.ActiveMessageCount,
+                FetchedCount  = null
             };
         }
     }
