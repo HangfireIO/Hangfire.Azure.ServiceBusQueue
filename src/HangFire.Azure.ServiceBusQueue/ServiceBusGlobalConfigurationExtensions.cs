@@ -34,7 +34,7 @@ namespace Hangfire.Azure.ServiceBusQueue
         public static IGlobalConfiguration UseServiceBusQueues(
             [NotNull] this IGlobalConfiguration<SqlServerStorage> configuration,
             [NotNull] string connectionString,
-            Action<CreateQueueOptions> configureAction,
+            Action<QueueDescription> configureAction,
             params string[] queues)
         {
             return UseServiceBusQueues(configuration, new ServiceBusQueueOptions
