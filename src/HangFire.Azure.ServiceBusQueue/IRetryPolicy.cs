@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
     public interface IRetryPolicy
     {
-        void Execute(Action action);
+        Task Execute(Func<Task> action);
     }
 }
