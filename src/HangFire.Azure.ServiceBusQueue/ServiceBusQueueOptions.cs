@@ -7,7 +7,7 @@ namespace Hangfire.Azure.ServiceBusQueue
     {
         public ServiceBusQueueOptions()
         {
-            QueuePollInterval    = TimeSpan.FromSeconds(15);
+            QueuePollInterval    = TimeSpan.Zero;
             CheckAndCreateQueues = true;
             LoopReceiveTimeout   = TimeSpan.FromMilliseconds(500);
             RetryPolicy          = new LinearRetryPolicy(3, TimeSpan.FromSeconds(1));
@@ -36,7 +36,7 @@ namespace Hangfire.Azure.ServiceBusQueue
         /// Configures a queue on construction, for example setting maximum message
         /// size or default TTL.
         /// </summary>
-        public Action<CreateQueueOptions> Configure { get; set; }
+        public Action<QueueDescription> Configure { get; set; }
 
         /// <summary>
         /// Gets or sets a value which indicates whether or not to automatically create and
