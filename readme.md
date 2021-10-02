@@ -84,10 +84,75 @@ sqlStorage.UseServiceBusQueues(new ServiceBusQueueOptions
         // Azure Service Bus which can increase costs, especially on an under-utilised server with few jobs.
         // Use a Higher value for lower costs in non production or non critical jobs
         LoopReceiveTimeout = TimeSpan.FromMilliseconds(500)
+        
+        // Delay between queue polling requests
+        QueuePollInterval = TimeSpan.Zero
     });
 
 GlobalConfiguration.Configuration
     .UseStorage(sqlStorage);
+```
+For .NETCore and beyond, you can also use the `IGlobalConfiguration extensions`:
+
+```csharp
+
+// Uses default options (no prefix or configuration) with the "default" queue only
+services.AddHangfire(configuration => configuration
+    .UseSqlServerStorage("<sql connection string>")
+    .UseServiceBusQueues("<azure servicebus connection string>")
+    
+// Uses default options (no prefix or configuration) with the "critical" and "default" queues
+services.AddHangfire(configuration => configuration
+    .UseSqlServerStorage("<sql connection string>")
+    .UseServiceBusQueues("<azure servicebus connection string>", "critical", "default")
+    
+// Configures queues on creation and uses the "crtical" and "default" queues
+services.AddHangfire(configuration => configuration
+    .UseSqlServerStorage("<sql connection string>")
+    .UseServiceBusQueues("<azure servicebus connection string>", 
+        queueOptions => {
+            queueOptions.MaxSizeInMegabytes = 5120;
+            queueOptions.DefaultMessageTimeToLive = new TimeSpan(0, 1, 0);
+        } "critical", "default")
+    
+// Specifies all options
+services.AddHangfire(configuration => configuration
+    .UseSqlServerStorage("<sql connection string>")
+    .UseServiceBusQueues(new ServiceBusQueueOptions
+    {
+        ConnectionString = connectionString,
+                
+        Configure = configureAction,
+        
+        // The actual queues used in Azure will have this prefix if specified
+        // (e.g. the "default" queue will be created as "my-prefix-default")
+        //
+        // This can be useful in development environments particularly where the machine
+        // name could be used to separate individual developers machines automatically
+        // (i.e. "my-prefix-{machine-name}".Replace("{machine-name}", Environment.MachineName))
+        QueuePrefix = "my-prefix-",
+        
+        // The queues to monitor. This *must* be specified, even to set just
+        // the default queue as done here
+        Queues = new [] { EnqueuedState.DefaultQueue },
+        
+        // By default queues will be checked and created on startup. This option
+        // can be disabled if the application will only be sending / listening to 
+        // the queue and you want to remove the 'Manage' permission from the shared
+        // access policy.
+        //
+        // Note that the dashboard *must* have the 'Manage' permission otherwise the
+        // queue length cannot be read
+        CheckAndCreateQueues = false,
+        
+        // Typically a lower value is desired to keep the throughput of message processing high. A lower timeout means more calls to
+        // Azure Service Bus which can increase costs, especially on an under-utilised server with few jobs.
+        // Use a Higher value for lower costs in non production or non critical jobs
+        LoopReceiveTimeout = TimeSpan.FromMilliseconds(500)
+        
+        // Delay between queue polling requests
+        QueuePollInterval = TimeSpan.Zero
+    }));
 ```
 
 Questions? Problems?
