@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using Azure.Messaging.ServiceBus.Administration;
 using Hangfire.Azure.ServiceBusQueue;
 using Hangfire.SqlServer;
