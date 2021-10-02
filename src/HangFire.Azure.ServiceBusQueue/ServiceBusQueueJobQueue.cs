@@ -43,7 +43,7 @@ namespace Hangfire.Azure.ServiceBusQueue
 
                     try
                     {
-                        var message = await busReceiver.ReceiveMessageAsync(_manager.Options.LoopReceiveTimeout)
+                        var message = await busReceiver.ReceiveMessageAsync(_manager.Options.LoopReceiveTimeout, cancellationToken)
                                                        .ConfigureAwait(false);
 
                         if (message != null)
@@ -52,6 +52,10 @@ namespace Hangfire.Azure.ServiceBusQueue
                                 $"{DateTime.Now} - Dequeue one message from queue {busReceiver.EntityPath} with body {message.Body}");
                             return new ServiceBusQueueFetchedJob(busReceiver, message, _options.LockRenewalDelay);
                         }
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        _logger.Warn($"a cancellation has been requested for the queue {busReceiver.EntityPath}");
                     }
                     catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.ServiceTimeout)
                     {
@@ -69,6 +73,7 @@ namespace Hangfire.Azure.ServiceBusQueue
                     queueIndex = (queueIndex + 1) % queues.Length;
 
                     await Task.Delay(_options.QueuePollInterval).ConfigureAwait(false);
+
                 } while (true);
             }).GetAwaiter().GetResult();
         }
