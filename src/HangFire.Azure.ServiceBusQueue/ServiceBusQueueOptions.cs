@@ -1,5 +1,4 @@
 ﻿using System;
-using Azure.Messaging.ServiceBus.Administration;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
