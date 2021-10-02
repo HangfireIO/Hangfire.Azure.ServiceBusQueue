@@ -75,7 +75,6 @@ namespace Hangfire.Azure.ServiceBusQueue
 
         private async Task CreateQueueClients()
         {
-            _logger.Warn("crea code main");
             foreach (var queue in Options.Queues)
             {
                 var prefixedQueue = Options.GetQueueName(queue);
