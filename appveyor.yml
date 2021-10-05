@@ -22,9 +22,6 @@ branches:
     - master
     - dev
 
-cache:
-  - packages
-
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
