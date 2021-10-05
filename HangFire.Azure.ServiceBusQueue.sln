@@ -1,25 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29123.88
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hangfire.Azure.ServiceBusQueue", "src\HangFire.Azure.ServiceBusQueue\Hangfire.Azure.ServiceBusQueue.csproj", "{4CC51F69-0311-4485-B7DE-9ECAB3A1B5E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hangfire.Azure.ServiceBusQueue", "src\HangFire.Azure.ServiceBusQueue\Hangfire.Azure.ServiceBusQueue.csproj", "{4CC51F69-0311-4485-B7DE-9ECAB3A1B5E5}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{756FFE84-4908-42BE-9918-4DA34E85AAFB}"
-	ProjectSection(SolutionItems) = preProject
-		.nuget\NuGet.Config = .nuget\NuGet.Config
-		.nuget\NuGet.exe = .nuget\NuGet.exe
-		.nuget\NuGet.targets = .nuget\NuGet.targets
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{95E4FDB9-247E-4BD8-896C-D28BCBA311F7}"
-	ProjectSection(SolutionItems) = preProject
-		appveyor.yml = appveyor.yml
-		nuspecs\Hangfire.Azure.ServiceBusQueue.nuspec = nuspecs\Hangfire.Azure.ServiceBusQueue.nuspec
-		psake-project.ps1 = psake-project.ps1
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HangFire.Azure.ServiceBusQueue.Tests", "tests\HangFire.Azure.ServiceBusQueue.Tests\HangFire.Azure.ServiceBusQueue.Tests.csproj", "{C9D29F07-4445-4FCB-BC38-2221B2B38231}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HangFire.Azure.ServiceBusQueue.Tests", "tests\HangFire.Azure.ServiceBusQueue.Tests\HangFire.Azure.ServiceBusQueue.Tests.csproj", "{C9D29F07-4445-4FCB-BC38-2221B2B38231}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

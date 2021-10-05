@@ -4,23 +4,36 @@
     <id>Hangfire.Azure.ServiceBusQueue</id>
     <version>0.0.0</version>
     <title>Hangfire Azure ServiceBus Queue</title>
-    <authors>Sergey Odinokov, Adam Barclay</authors>
+    <authors>Sergey Odinokov, Adam Barclay, Giampaolo Gabba</authors>
     <owners>odinserj</owners>
     <projectUrl>https://github.com/odinserj/HangFire.Azure.ServiceBusQueue</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>https://raw.github.com/odinserj/HangFire.Azure.ServiceBusQueue/master/license.txt</licenseUrl>
     <description>Azure ServiceBus Queue support for SQL Server job storage implementation</description>
-    <copyright>Copyright © 2015 Sergey Odinokov, Adam Barclay</copyright>
+    <copyright>Copyright © 2015 Sergey Odinokov, Adam Barclay, Giampaolo Gabba</copyright>
     <tags>Hangfire Azure ServiceBus SqlServer</tags>
-	<dependencies>
-		<dependency id="Hangfire.Core" version="1.7.0" />
-		<dependency id="Hangfire.SqlServer" version="1.7.0" />
-		<dependency id="WindowsAzure.ServiceBus" version="2.7.5" />
-	</dependencies>
+  <dependencies>
+    <group targetFramework="net461">
+      <dependency id="Hangfire.Core" version="1.7.0" />
+      <dependency id="Hangfire.SqlServer" version="1.7.0" />
+      <dependency id="Azure.Messaging.ServiceBus" version="7.3.0" />
+    </group>
+    <group targetFramework="netstandard2.0">
+      <dependency id="Hangfire.Core" version="1.7.0" />
+      <dependency id="Hangfire.SqlServer" version="1.7.0" />
+      <dependency id="Azure.Messaging.ServiceBus" version="7.3.0" />
+    </group>
+  </dependencies>
   </metadata>
   <files>
-    <file src="Net45\Hangfire.Azure.ServiceBusQueue.dll" target="lib\net45" />
-    <file src="Net45\Hangfire.Azure.ServiceBusQueue.xml" target="lib\net45" />
-    <file src="Net45\Hangfire.Azure.ServiceBusQueue.pdb" target="lib\net45" />
+    <file src="net461\Hangfire.Azure.ServiceBusQueue.dll" target="lib\net461" />
+    <file src="net461\Hangfire.Azure.ServiceBusQueue.xml" target="lib\net461" />
+    <file src="net461\Hangfire.Azure.ServiceBusQueue.pdb" target="lib\net461" />
+
+    <file src="netstandard2.0\Hangfire.Azure.ServiceBusQueue.dll" target="lib\netstandard2.0" />
+    <file src="netstandard2.0\Hangfire.Azure.ServiceBusQueue.xml" target="lib\netstandard2.0" />
+    <file src="netstandard2.0\Hangfire.Azure.ServiceBusQueue.pdb" target="lib\netstandard2.0" />
+
+    <file src="..\src\Hangfire.Azure.ServiceBusQueue\**\*.cs" target="src" exclude="**\obj*\**\*.cs" />
   </files>
 </package>

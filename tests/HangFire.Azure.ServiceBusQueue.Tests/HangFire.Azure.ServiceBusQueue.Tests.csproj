@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <AssemblyTitle>HangFire.Azure.ServiceBusQueue.Tests</AssemblyTitle>
-    <Product>HangFire.Azure.ServiceBusQueue.Tests</Product>
-    <Copyright>Copyright ©  2017</Copyright>
+    <AssemblyTitle>Hangfire.Azure.ServiceBusQueue.Tests</AssemblyTitle>
+    <Product>Hangfire.Azure.ServiceBusQueue.Tests</Product>
+    <Copyright>Copyright © Hangfire.Azure.ServiceBusQueue authors 2017</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0" />
