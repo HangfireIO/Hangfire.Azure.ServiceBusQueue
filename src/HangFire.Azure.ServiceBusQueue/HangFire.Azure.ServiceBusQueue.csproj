@@ -1,30 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <AssemblyTitle>HangFire.Azure.ServiceBusQueue</AssemblyTitle>
-        <Product>HangFire.Azure.ServiceBusQueue</Product>
-        <Title>Hangfire Azure ServiceBus Queue</Title>
-        <Authors>Sergey Odinokov, Adam Barclay</Authors>
-        <RepositoryUrl>https://github.com/HangfireIO/HangFire.Azure.ServiceBusQueue</RepositoryUrl>
-        <PackageId>HangFire.Azure.ServiceBusQueue</PackageId>
-        <PackageProjectUrl>https://github.com/HangfireIO/HangFire.Azure.ServiceBusQueue</PackageProjectUrl>
-        <PackageLicenseUrl>https://raw.github.com/odinserj/HangFire.Azure.ServiceBusQueue/master/license.txt</PackageLicenseUrl>
-        <Description>ServiceBus Queue support for SQL Server job storage implementation</Description>
-        <Copyright>Copyright © 2015 Sergey Odinokov, Adam Barclay</Copyright>
-        <PackageTags>Hangfire Azure ServiceBus SqlServer</PackageTags>
-        <Version>4.1.0</Version>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageTags>Hangfire Azure ServiceBus SqlServer</PackageTags>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+        <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+        <DebugType>portable</DebugType>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>1591</NoWarn>
+        <RootNamespace>Hangfire.Azure.ServiceBusQueue</RootNamespace>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
+        <DebugType>full</DebugType>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)'=='net461'">
+        <Reference Include="System.Transactions" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.3.0" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Hangfire.Core" Version="1.7.25" />
-        <PackageReference Include="Hangfire.SqlServer" Version="1.7.25" />
+        <PackageReference Include="Hangfire.Core" Version="1.7.0" />
+        <PackageReference Include="Hangfire.SqlServer" Version="1.7.0" />
     </ItemGroup>
 </Project>

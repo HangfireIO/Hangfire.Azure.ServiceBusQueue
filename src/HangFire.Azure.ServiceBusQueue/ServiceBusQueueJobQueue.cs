@@ -78,7 +78,11 @@ namespace Hangfire.Azure.ServiceBusQueue
             }).GetAwaiter().GetResult();
         }
 
+#if NETSTANDARD2_0
         public void Enqueue(DbConnection connection, DbTransaction transaction, string queue, string jobId)
+#else
+        public void Enqueue(System.Data.IDbConnection connection, string queue, string jobId)
+#endif
         {
             // Because we are within a TransactionScope at this point the below
             // call would not work (Local transactions are not supported with other resource managers/DTC
