@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "dependencies": {
+    "Any,Version=v0.0": {
+      "Hangfire.Build": {
+        "type": "Direct",
+        "requested": "[0.5.0, 0.5.0]",
+        "resolved": "0.5.0",
+        "contentHash": "4yRCdMaDr6cyFRmCvpFO8kBMV57KPOofugaHOsjkDEDw+G/BCGWOdrpXfkAeTEtZBPUv2jS0PYmVNK5680KxXQ=="
+      },
+      "psake": {
+        "type": "Direct",
+        "requested": "[4.4.1, 4.4.1]",
+        "resolved": "4.4.1",
+        "contentHash": "Hn5kdGPEoapi+wAAjaGjKEZVnuYp7fUrPK3IivLYG6Bn4adhd8l+KXXPMEmte41RmrLvfV7XGZa9KsSTc0gjDA=="
+      }
+    }
+  }
+}
