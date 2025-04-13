@@ -25,8 +25,8 @@ namespace Hangfire.Azure.ServiceBusQueue
 
             _senders               = new Dictionary<string, ServiceBusSender>(options.Queues.Length);
             _receivers             = new Dictionary<string, ServiceBusReceiver>(options.Queues.Length);
-            _managementClient      = new ServiceBusClient(options.ConnectionString);
-            _managementAdminClient = new ServiceBusAdministrationClient(options.ConnectionString);
+            _managementClient      = options.Credential != null ? new ServiceBusClient(options.ConnectionString, options.Credential) : new ServiceBusClient(options.ConnectionString);
+            _managementAdminClient = options.Credential != null ? new ServiceBusAdministrationClient(options.ConnectionString, options.Credential) : new ServiceBusAdministrationClient(options.ConnectionString);
 
             if (options.CheckAndCreateQueues)
             {

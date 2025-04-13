@@ -27,7 +27,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
         [TearDown]
         public async Task DeleteQueues()
         {
-            var manager = new ServiceBusAdministrationClient(options.ConnectionString);
+            var manager = options.Credential != null ? new ServiceBusAdministrationClient(options.ConnectionString, options.Credential) : new ServiceBusAdministrationClient(options.ConnectionString);
 
             foreach (var queueName in options.Queues)
             {

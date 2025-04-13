@@ -1,4 +1,5 @@
 ﻿using System;
+using Azure.Core;
 
 namespace Hangfire.Azure.ServiceBusQueue
 {
@@ -56,6 +57,8 @@ namespace Hangfire.Azure.ServiceBusQueue
         public TimeSpan? LockRenewalDelay { get; set; }
 
         public string ConnectionString { get; set; }
+
+        public TokenCredential Credential { get; set; }
 
         public string[] Queues { get; set; }
 

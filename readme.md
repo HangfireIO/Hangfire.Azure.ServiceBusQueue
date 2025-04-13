@@ -123,6 +123,8 @@ sqlStorage.UseServiceBusQueues(connectionString, configureAction, "critical", "d
 sqlStorage.UseServiceBusQueues(new ServiceBusQueueOptions
     {
         ConnectionString = connectionString,
+
+        Credential = new DefaultAzureCredential() // any Azure.Identity.TokenCredential
                 
         Configure = configureAction,
         
