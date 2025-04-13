@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Hangfire.Azure.ServiceBusQueue;
 using Microsoft.Extensions.Configuration;
+using Azure.Identity;
 
 namespace HangFire.Azure.ServiceBusQueue.Tests
 {
@@ -15,6 +16,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
 
             CheckAndCreateQueues = true;
             ConnectionString     = configBuilder["BusConnectionString"];
+            Credential           = new DefaultAzureCredential();
             QueuePrefix          = "hf-sb-tests-";
             Queues               = new[] { "test1", "test2", "test3" };
             QueuePollInterval    = TimeSpan.Zero;
