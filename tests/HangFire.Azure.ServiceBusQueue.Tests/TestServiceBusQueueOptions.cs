@@ -16,7 +16,7 @@ namespace HangFire.Azure.ServiceBusQueue.Tests
 
             CheckAndCreateQueues = true;
             ConnectionString     = configBuilder["BusConnectionString"];
-            Credential           = new DefaultAzureCredential();
+            Credential           = configBuilder["UseDefaultAzureCredential"] == "true" ? new DefaultAzureCredential() : null;
             QueuePrefix          = "hf-sb-tests-";
             Queues               = new[] { "test1", "test2", "test3" };
             QueuePollInterval    = TimeSpan.Zero;
