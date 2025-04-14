@@ -16,3 +16,9 @@ Task Pack -Depends Collect -Description "Create NuGet packages and archive files
     Create-Package "Hangfire.Azure.ServiceBusQueue" $version
     Create-Archive "Hangfire.Azure.ServiceBusQueue-$version"
 }
+
+Task Sign -Depends Pack -Description "Sign artifacts." {
+    $version = Get-PackageVersion
+
+    Sign-ArchiveContents "Hangfire.Azure.ServiceBusQueue-$version" "hangfire"
+}

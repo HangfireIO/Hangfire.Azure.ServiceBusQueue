@@ -23,7 +23,7 @@ before_build:
   - pwsh: Install-PSResource -Name SignPath -TrustRepository
 
 # to run your custom scripts instead of automatic MSBuild
-build_script: build.bat pack
+build_script: build.bat sign
 
 #---------------------------------#
 #       tests configuration       #
