@@ -16,24 +16,20 @@
     <group targetFramework="net461">
       <dependency id="Hangfire.Core" version="1.7.0" />
       <dependency id="Hangfire.SqlServer" version="1.7.0" />
-      <dependency id="Azure.Messaging.ServiceBus" version="7.3.0" />
+      <dependency id="Azure.Messaging.ServiceBus" version="7.19.0" />
     </group>
     <group targetFramework="netstandard2.0">
       <dependency id="Hangfire.Core" version="1.7.0" />
       <dependency id="Hangfire.SqlServer" version="1.7.0" />
-      <dependency id="Azure.Messaging.ServiceBus" version="7.3.0" />
+      <dependency id="Azure.Messaging.ServiceBus" version="7.19.0" />
     </group>
   </dependencies>
   </metadata>
   <files>
     <file src="net461\Hangfire.Azure.ServiceBusQueue.dll" target="lib\net461" />
     <file src="net461\Hangfire.Azure.ServiceBusQueue.xml" target="lib\net461" />
-    <file src="net461\Hangfire.Azure.ServiceBusQueue.pdb" target="lib\net461" />
 
     <file src="netstandard2.0\Hangfire.Azure.ServiceBusQueue.dll" target="lib\netstandard2.0" />
     <file src="netstandard2.0\Hangfire.Azure.ServiceBusQueue.xml" target="lib\netstandard2.0" />
-    <file src="netstandard2.0\Hangfire.Azure.ServiceBusQueue.pdb" target="lib\netstandard2.0" />
-
-    <file src="..\src\Hangfire.Azure.ServiceBusQueue\**\*.cs" target="src" exclude="**\obj*\**\*.cs" />
   </files>
 </package>
