@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyProduct("Hangfire.Azure.ServiceBus")]
+[assembly: AssemblyProduct("Hangfire")]
 [assembly: AssemblyCopyright("Copyright © 2013-2015 Sergey Odinokov, Adam Barclay")]
 [assembly: AssemblyCulture("")]
 
